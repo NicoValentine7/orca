@@ -4,6 +4,7 @@ import { requestNativeChatComposerFocus } from '../native-chat/composer/focus/na
 import type { NativeChatSideChatPlacement } from '../native-chat/messages/actions/native-chat-side-chat-placement'
 import type { ExecutionHostId } from '../../../../shared/execution-host/execution-host'
 import { openSideChatInRightSidebar, registerSideChat } from './side-chat-sidebar-registry'
+import { clearPendingSideChatQuote, deliverPendingSideChatQuote } from './side-chat-sidebar-quote'
 
 // Remote hosts publish the fork's tab in a later frame.
 const SIDE_CHAT_TAB_WATCH_MS = 60_000
@@ -19,8 +20,10 @@ export function beginSideChatSidebarPlacement(
   return {
     settle: (chat) => {
       if (!chat || !sourceSessionId) {
+        clearPendingSideChatQuote()
         return
       }
+      deliverPendingSideChatQuote(chat.sessionId)
       // Registered first so the tab never flashes in the strip once drawn.
       registerSideChat(sourceSessionId, chat.sessionId)
       openSideChatInRightSidebar(sourceSessionId, chat.sessionId)

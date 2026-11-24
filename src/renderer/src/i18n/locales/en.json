@@ -24160,7 +24160,8 @@
       "tab": "Side chat",
       "empty": "Send /btw <question> in a chat to open a side chat here.",
       "moveToTab": "Open as tab",
-      "close": "Close side chat"
+      "close": "Close side chat",
+      "quoteInSideChat": "Ask in side chat"
     }
   },
   "dashboardPopout": {

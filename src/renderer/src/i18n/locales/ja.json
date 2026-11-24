@@ -21725,6 +21725,13 @@
         "cancel": "キャンセル",
         "tryAgain": "再試行"
       }
+    },
+    "sideChatSidebar": {
+      "tab": "サイドチャット",
+      "empty": "チャットで /btw <質問> を送ると、ここにサイドチャットが開きます。",
+      "moveToTab": "タブで開く",
+      "close": "サイドチャットを閉じる",
+      "quoteInSideChat": "サイドチャットで聞く"
     }
   },
   "dashboardPopout": {
