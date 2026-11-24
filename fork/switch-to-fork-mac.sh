@@ -1,20 +1,20 @@
 #!/bin/bash
-# 公式の Orca と Orca Fork を並べる形へ、最初の 1 回だけ移る。
+# 公式の Orca と fOrca を並べる形へ、最初の 1 回だけ移る。
 # 使い方: bash fork/switch-to-fork-mac.sh
 #
 # 前の運用で /Applications/Orca.app をフォーク版に入れ替えていたときに使う。本体は launchd に渡して裏で動かし、
-#   1. Orca Fork のビルド（fork/build-mac.sh）が終わるのを待つ
+#   1. fOrca のビルド（fork/build-mac.sh）が終わるのを待つ
 #   2. Orca の中で動いているエージェントが全部止まるのを待つ（30 秒おきに見て、2 回続けて 0 なら進む）
 #   3. Orca を終了し、/Applications/Orca.app を退避してあった公式の .app に戻す
-#   4. 公式のデータを Orca Fork に取り込む（fork/import-official-profile.sh）
-#   5. Orca Fork を置いて開く（fork/install-mac.sh --worker）
+#   4. 公式のデータを fOrca に取り込む（fork/import-official-profile.sh）
+#   5. fOrca を置いて開く（fork/install-mac.sh --worker）
 # 記録は ~/Library/Logs/orca-fork-switch.log。終わりと失敗は mac の通知でも知らせる。
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 log="$HOME/Library/Logs/orca-fork-switch.log"
 build_log="$HOME/Library/Logs/orca-fork-build.log"
-built_app="$repo/dist/fork.noindex/mac-arm64/Orca Fork.app"
+built_app="$repo/dist/fork.noindex/mac-arm64/fOrca.app"
 orca_app="/Applications/Orca.app"
 backup_dir="$HOME/work/tools/orca-official-backup.noindex"
 label="com.fukuda.orca-fork-switch"
@@ -48,7 +48,7 @@ say() { echo "[$(stamp)] $*"; }
 notify() { bash "$HOME/.local/bin/notify-user" "$1" >/dev/null 2>&1 || true; }
 fail() {
   say "中止: $1"
-  notify "Orca Fork への切り替えを中止した: $1"
+  notify "fOrca への切り替えを中止した: $1"
   exit 1
 }
 orca_running() { pgrep -f "^$orca_app/Contents/MacOS/Orca( |$)" >/dev/null; }
@@ -66,11 +66,11 @@ orca_cli="$orca_app/Contents/Resources/bin/orca"
 working_count() {
   "$orca_cli" worktree ps --json --limit 1000 2>/dev/null | /usr/bin/python3 -I -c '
 import json, sys
-def walk(agent):
-    n = 1 if agent.get("state") == "working" else 0
-    return n + sum(walk(child) for child in agent.get("children") or [])
+# 親のエージェントだけを数える。子（サブエージェント）は中身が空のまま working で残ることがあり、
+# 動いている子がいれば親も working になっている。
 data = json.load(sys.stdin)["result"]
-print(sum(walk(a) for w in data["worktrees"] for a in w.get("agents") or []))
+print(sum(1 for w in data["worktrees"] for a in w.get("agents") or []
+          if a.get("state") == "working" and a.get("paneKey")))
 '
 }
 quiet=0
@@ -115,14 +115,14 @@ fi
 # 4. 公式のデータを取り込む
 bash "$repo/fork/import-official-profile.sh" || fail "データの取り込みに失敗した"
 
-# 5. Orca Fork を置いて開く
-bash "$repo/fork/install-mac.sh" --worker || fail "Orca Fork を置けなかった"
+# 5. fOrca を置いて開く
+bash "$repo/fork/install-mac.sh" --worker || fail "fOrca を置けなかった"
 
 sleep 20
-if pgrep -f "^/Applications/Orca Fork.app/Contents/MacOS/Orca Fork( |$)" >/dev/null; then
-  say "Orca Fork が動いている"
-  notify "Orca Fork に切り替えた"
+if pgrep -f "^/Applications/fOrca.app/Contents/MacOS/fOrca( |$)" >/dev/null; then
+  say "fOrca が動いている"
+  notify "fOrca に切り替えた"
 else
-  fail "Orca Fork が起動していない"
+  fail "fOrca が起動していない"
 fi
 say "終わり"

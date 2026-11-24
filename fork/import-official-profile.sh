@@ -1,10 +1,10 @@
 #!/bin/bash
-# 公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を、Orca Fork に取り込む。
-# 使い方: bash fork/import-official-profile.sh（Orca Fork を終了してから）
+# 公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を、fOrca に取り込む。
+# 使い方: bash fork/import-official-profile.sh（fOrca を終了してから）
 #
 # 取り込むのは本家の dev-profile-seed.mjs と同じ範囲で、ターミナルの中身・自動化・会話の画面は持ってこない。
-# 会話の履歴はエージェント側（~/.claude など）に残るので、Orca Fork の「Agents」から開き直せる。
-# 公式のデータは読むだけで書き換えない。Orca Fork に前のデータがあれば、日時付きの名前で横に退避してから入れる。
+# 会話の履歴はエージェント側（~/.claude など）に残るので、fOrca の「Agents」から開き直せる。
+# 公式のデータは読むだけで書き換えない。fOrca に前のデータがあれば、日時付きの名前で横に退避してから入れる。
 # 公式とフォークは本家の同じ安定版が土台なので、データの形（スキーマ）はそろっている。
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -16,16 +16,16 @@ support="$HOME/Library/Application Support"
 source_dir="$support/orca"
 target_dir="$support/orca-fork"
 
-# 先頭で絞る。Orca Fork の裏方（デーモン）は引数に本体のパスを持つので、途中一致だと誤って止まる。
-if pgrep -f "^/Applications/Orca Fork.app/Contents/MacOS/Orca Fork( |$)" >/dev/null; then
-  echo "Orca Fork を終了してから取り込む" >&2
+# 先頭で絞る。fOrca の裏方（デーモン）は引数に本体のパスを持つので、途中一致だと誤って止まる。
+if pgrep -f "^/Applications/fOrca.app/Contents/MacOS/fOrca( |$)" >/dev/null; then
+  echo "fOrca を終了してから取り込む" >&2
   exit 1
 fi
 
 if [ -d "$target_dir" ]; then
   backup="$target_dir.bak-$(date +%Y%m%d-%H%M%S)"
   mv "$target_dir" "$backup"
-  echo "[fork] 前の Orca Fork のデータを退避した: $backup"
+  echo "[fork] 前の fOrca のデータを退避した: $backup"
 fi
 
 node --input-type=module -e "

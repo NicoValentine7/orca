@@ -1,18 +1,18 @@
 #!/bin/bash
-# 自前ビルドの Orca Fork.app（dist/fork.noindex/mac-arm64/Orca Fork.app）を /Applications/Orca Fork.app に置く。
+# 自前ビルドの fOrca.app（dist/fork.noindex/mac-arm64/fOrca.app）を /Applications/fOrca.app に置く。
 # 使い方: bash fork/install-mac.sh
 #
 # 公式の /Applications/Orca.app には触らない。フォーク版が壊れたら、公式の Orca を開けば戻れる。
-# Orca Fork の中のターミナルや会話から呼んでも途中で止まらないよう、本体の処理は launchd に渡して裏で動かす。
-# 流れ: Orca Fork を終了 → 今の Orca Fork.app を 1 つ前として退避 → 新しいビルドを置く → Orca Fork を開く。
-# 退避先は ~/work/tools/orca-official-backup.noindex/Orca-Fork-previous.app。記録は ~/Library/Logs/orca-fork-install.log。
+# fOrca の中のターミナルや会話から呼んでも途中で止まらないよう、本体の処理は launchd に渡して裏で動かす。
+# 流れ: fOrca を終了 → 今の fOrca.app を 1 つ前として退避 → 新しいビルドを置く → fOrca を開く。
+# 退避先は ~/work/tools/orca-official-backup.noindex/fOrca-previous.app。記録は ~/Library/Logs/orca-fork-install.log。
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-src="$repo/dist/fork.noindex/mac-arm64/Orca Fork.app"
-dest="/Applications/Orca Fork.app"
+src="$repo/dist/fork.noindex/mac-arm64/fOrca.app"
+dest="/Applications/fOrca.app"
 bundle_id="com.nicovalentine.orca-fork"
-backup="$HOME/work/tools/orca-official-backup.noindex/Orca-Fork-previous.app"
+backup="$HOME/work/tools/orca-official-backup.noindex/fOrca-previous.app"
 log="$HOME/Library/Logs/orca-fork-install.log"
 label="com.fukuda.orca-fork-install"
 domain="gui/$(id -u)"
@@ -39,12 +39,12 @@ if [ "${1:-}" != "--worker" ]; then
 PLIST
   launchctl bootout "$domain/$label" 2>/dev/null || true
   launchctl bootstrap "$domain" "$plist"
-  echo "裏で Orca Fork を置き始めた。記録: $log"
+  echo "裏で fOrca を置き始めた。記録: $log"
   exit 0
 fi
 
 stamp() { date '+%F %T'; }
-fork_running() { pgrep -f "^$dest/Contents/MacOS/Orca Fork( |$)" >/dev/null; }
+fork_running() { pgrep -f "^$dest/Contents/MacOS/fOrca( |$)" >/dev/null; }
 
 echo "[$(stamp)] 置き始める: $src"
 new_version="$(defaults read "$src/Contents/Info.plist" CFBundleShortVersionString)"
@@ -56,7 +56,7 @@ if fork_running; then
     sleep 1
   done
   if fork_running; then
-    echo "[$(stamp)] Orca Fork が 10 分たっても終わらないので中止した"
+    echo "[$(stamp)] fOrca が 10 分たっても終わらないので中止した"
     exit 1
   fi
 fi

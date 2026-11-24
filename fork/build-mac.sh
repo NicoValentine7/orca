@@ -1,7 +1,7 @@
 #!/bin/bash
 # フォークの Orca を、この mac（Apple シリコン）向けの .app としてビルドする。
 # 使い方: bash fork/build-mac.sh
-# 出力は dist/fork.noindex/mac-arm64/Orca Fork.app（公式の Orca と並べて置く別のアプリ）。置くのは fork/install-mac.sh で行う。
+# 出力は dist/fork.noindex/mac-arm64/fOrca.app（公式の Orca と並べて置く別のアプリ）。置くのは fork/install-mac.sh で行う。
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -47,7 +47,7 @@ pnpm exec electron-builder --config config/electron-builder.config.cjs --mac dir
 
 # 署名用の証明書が無いと electron-builder は署名を飛ばし、.app 全体の署名が壊れたままになる。
 # 中身ごと ad-hoc（証明書なし）で署名し直して、整合を取る。
-app="dist/fork.noindex/mac-arm64/Orca Fork.app"
+app="dist/fork.noindex/mac-arm64/fOrca.app"
 codesign --force --deep --sign - --entitlements resources/build/entitlements.mac.plist "$app"
 codesign --verify --deep --strict "$app"
 echo "[fork] built $app"

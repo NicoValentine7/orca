@@ -17,13 +17,14 @@
 
 ## ビルドと置き方
 
-フォーク版は「Orca Fork」という別のアプリとして、公式の Orca の横に置く。普段は Orca Fork を使い、壊れたら公式の Orca を開いて戻る。安定した変更だけを `custom` に入れる（2026-11-24 本人の決定）。
+フォーク版は「fOrca」という別のアプリとして、公式の Orca の横に置く。普段は fOrca を使い、壊れたら公式の Orca を開いて戻る。安定した変更だけを `custom` に入れる（2026-11-24 本人の決定）。
 
-- `bash fork/build-mac.sh` で `dist/fork.noindex/mac-arm64/Orca Fork.app` を作る。バージョンは `1.4.272-local.<時刻>.<コミット>` の形になる
+- `bash fork/build-mac.sh` で `dist/fork.noindex/mac-arm64/fOrca.app` を作る。バージョンは `1.4.272-local.<時刻>.<コミット>` の形になる
+- 名前は fOrca、アイコンは暗い緑とミントで左上に f の札（`resources/build/fork/icon.icns`。本家のアイコンが変わったら `swift fork/make-icon.swift resources/build/icon.png resources/build/fork/icon.png` で作り直し、iconutil で icns にする）
 - 別名にするのは `config/fork-app-identity.cjs`（`ORCA_FORK_APP=1` のときだけ効く）。バンドル ID は `com.nicovalentine.orca-fork`、データの置き場は `~/Library/Application Support/orca-fork` で、公式の `orca` とは分かれる。`orca://` の URL は公式に任せる
 - バージョンに `-local.` が入ったビルドは、`src/main/updater/updater-fork-local-build.ts` の判定で本家の自動更新を止める
 - ビルドの出力と退避した .app は、名前が `.noindex` で終わるフォルダ（`dist/fork.noindex/`、`~/work/tools/orca-official-backup.noindex/`）に置く。Spotlight と Launchpad はこのフォルダの中を拾わないので、検索に Orca が何個も並ばない
-- `bash fork/install-mac.sh` で `/Applications/Orca Fork.app` を置き換える。公式の `/Applications/Orca.app` には触らない。Orca Fork を終了してから置くので、Orca Fork の中で動く会話やエージェントは止まる
-- 前の運用（`/Applications/Orca.app` をフォーク版に入れ替えた状態）からは、`bash fork/switch-to-fork-mac.sh` で 1 回だけ移る。ビルドの終わりと、動いているエージェントが止まるのを待ってから、公式の Orca.app に戻し、データを取り込み、Orca Fork を開く
-- `bash fork/import-official-profile.sh` で、公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を Orca Fork に取り込む（Orca Fork を終了してから）。同期ではなく、そのときの写しで、Orca Fork の前のデータは日時付きの名前で横に退避する
-- 公式とフォークで分かれないもの: `~/.orca` の下（エージェントのフック、API キーのファイル、Google などの接続）。鍵はアプリごとの Keychain の鍵で暗号化されるので、Orca の account のサインインと API キーは Orca Fork 側で入れ直す
+- `bash fork/install-mac.sh` で `/Applications/fOrca.app` を置き換える。公式の `/Applications/Orca.app` には触らない。fOrca を終了してから置くので、fOrca の中で動く会話やエージェントは止まる
+- 前の運用（`/Applications/Orca.app` をフォーク版に入れ替えた状態）からは、`bash fork/switch-to-fork-mac.sh` で 1 回だけ移る。ビルドの終わりと、動いているエージェントが止まるのを待ってから、公式の Orca.app に戻し、データを取り込み、fOrca を開く
+- `bash fork/import-official-profile.sh` で、公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を fOrca に取り込む（fOrca を終了してから）。同期ではなく、そのときの写しで、fOrca の前のデータは日時付きの名前で横に退避する
+- 公式とフォークで分かれないもの: `~/.orca` の下（エージェントのフック、API キーのファイル、Google などの接続）。鍵はアプリごとの Keychain の鍵で暗号化されるので、Orca の account のサインインと API キーは fOrca 側で入れ直す

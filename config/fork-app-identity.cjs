@@ -3,12 +3,15 @@
 // - パッケージ名を orca-fork にして、データの置き場を ~/Library/Application Support/orca-fork に分ける
 //   （Electron は userData をパッケージ名から決める。公式の orca と同じだとプロファイルを奪い合う）
 // - orca:// の URL は公式に任せる
+// - アイコンを fOrca 用に変える
 // - 出力を dist/fork.noindex に置き、Spotlight や Launchpad にビルドの .app が並ばないようにする
 'use strict'
 
 const FORK_APP_ID = 'com.nicovalentine.orca-fork'
-const FORK_PRODUCT_NAME = 'Orca Fork'
+const FORK_PRODUCT_NAME = 'fOrca'
 const FORK_PACKAGE_NAME = 'orca-fork'
+// 暗い緑とミントの色で、左上に f の札（fork/make-icon.swift で本家のアイコンから作る）
+const FORK_MAC_ICON = 'resources/build/fork/icon.icns'
 
 /** @param {import('electron-builder').Configuration} config */
 function applyForkAppIdentity(config, env = process.env) {
@@ -22,7 +25,8 @@ function applyForkAppIdentity(config, env = process.env) {
     protocols: [],
     extraMetadata: { ...config.extraMetadata, name: FORK_PACKAGE_NAME },
     publish: null,
-    directories: { ...config.directories, output: 'dist/fork.noindex' }
+    directories: { ...config.directories, output: 'dist/fork.noindex' },
+    mac: { ...config.mac, icon: FORK_MAC_ICON }
   }
 }
 
