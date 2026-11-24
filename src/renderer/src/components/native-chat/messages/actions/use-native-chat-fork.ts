@@ -34,6 +34,7 @@ import {
 } from '@/components/native-chat/messages/actions/native-chat-fork-launch'
 import type { NativeChatStructuredViewProps } from '@/components/native-chat/native-chat-view-types'
 import { beginSideChatSidebarPlacement } from '@/components/side-chat-sidebar/side-chat-sidebar-placement'
+import { useReportTabSideChat } from '@/components/side-chat-sidebar/side-chat-sidebar-quote'
 import {
   useNativeChatSideChat,
   type NativeChatSideChat
@@ -254,5 +255,6 @@ export function useNativeChatPaneFork(
     sessionForkSupport: chat.forkSupport
   })
   const sideChat = useNativeChatSideChat(fork)
+  useReportTabSideChat(pane.tabId, sideChat)
   return useMemo(() => ({ fork, sideChat }), [fork, sideChat])
 }

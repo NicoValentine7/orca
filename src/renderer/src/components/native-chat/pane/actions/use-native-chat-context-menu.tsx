@@ -53,6 +53,8 @@ import type { NativeChatFileLinkContext } from '../../links/actions/native-chat-
 import type { NativeChatMessageListHandle } from '../../messages/actions/use-native-chat-reveal-latest'
 import type { NativeChatRewindSurface } from '../../messages/actions/use-native-chat-rewind-host'
 import { useNativeChatStandaloneMenu } from './use-native-chat-standalone-menu'
+import type { NativeChatSideChat } from '../../messages/actions/use-native-chat-side-chat'
+import { SideChatQuoteMenuItem } from '../../../side-chat-sidebar/SideChatQuoteMenuItem'
 import type { NativeChatSessionMenuSource } from './use-native-chat-session-context-actions'
 
 type NativeChatContextMenuState = {
@@ -63,6 +65,8 @@ type NativeChatContextMenuState = {
   image?: NativeChatCopyImage
   target: NativeChatContextMenuTarget
   returnFocusTo: Element | null
+  /** Read when the menu opens; the chat's side chat is made after its menu. */
+  sideChat?: NativeChatSideChat
 }
 
 export type UseNativeChatContextMenuArgs = {
@@ -89,6 +93,7 @@ export type NativeChatContextMenuTargetArgs = {
   fileLinkContext?: NativeChatFileLinkContext | null | NativeChatLinkContextResolver
   rewind?: NativeChatRewindSurface
   onFind?: (returnFocusTo: Element | null) => void
+  getSideChat?: () => NativeChatSideChat | undefined
 }
 
 export type NativeChatContextMenuActions = {
@@ -152,7 +157,8 @@ export function useNativeChatContextMenu({
   messageListRef,
   fileLinkContext = null,
   rewind,
-  onFind
+  onFind,
+  getSideChat
 }: UseNativeChatContextMenuArgs): {
   onContextMenuCapture: MouseEventHandler<HTMLElement>
   onPointerDownCapture: PointerEventHandler<HTMLElement>
@@ -216,6 +222,7 @@ export function useNativeChatContextMenu({
         selectedText: missesSelection ? '' : selectedText,
         canPaste: isEditableTarget(event.target),
         returnFocusTo: rootRef.current?.ownerDocument.activeElement ?? null,
+        sideChat: getSideChat?.(),
         image: readNativeChatCopyImage(event.target),
         target: readNativeChatContextMenuTarget(event.target, {
           root: rootRef.current,
@@ -225,7 +232,7 @@ export function useNativeChatContextMenu({
         })
       })
     },
-    [composerRef, enabled, fileLinkContext, messageListRef, rootRef]
+    [composerRef, enabled, fileLinkContext, getSideChat, messageListRef, rootRef]
   )
 
   const setOpen = useCallback((open: boolean) => {
@@ -302,6 +309,9 @@ export function useNativeChatContextMenu({
             }}
             rewind={rewind}
           />
+          {state.sideChat && target.quoteText ? (
+            <SideChatQuoteMenuItem sideChat={state.sideChat} quoteText={target.quoteText} />
+          ) : null}
           {state.canPaste ? (
             <DropdownMenuItem onSelect={() => actions.onPaste()}>
               <Clipboard />

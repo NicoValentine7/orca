@@ -33,6 +33,7 @@ export type NativeChatSurfaceTranscript = Pick<NativeChatMessageListHandle, 'rev
   Partial<Pick<NativeChatMessageListHandle, 'messageCopyText'>>
 
 /** A screen's own context-menu rows; the surface supplies find, paste, and the transcript targets. */
+import { sideChatOfTab } from '../side-chat-sidebar/side-chat-sidebar-quote'
 export type NativeChatSurfaceMenu = Omit<
   UseNativeChatContextMenuArgs,
   | 'rootRef'
@@ -122,7 +123,8 @@ export function useNativeChatSurface({
       down: formatShortcutLabel('terminal.splitDown', keybindings)
     },
     messageListRef: transcriptRef,
-    onFind: find.open
+    onFind: find.open,
+    getSideChat: () => sideChatOfTab(tabId)
   })
   const onSplitKey = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
