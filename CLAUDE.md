@@ -15,8 +15,13 @@
 - gh の既定のアカウントは仕事用で、そのままだと push が 403 になる。既定は切り替えず、`GH_TOKEN="$(gh auth token --user NicoValentine7)" git push origin custom` で個人のアカウントの権限だけを渡す
 - 本家の画面の部品を消すと、文言の一覧の検査（localization）が落ち、全言語のファイルを直すことになる。部品は残し、`src/renderer/src/components/sidebar/chrome/fork-sidebar-customization.ts` のようなフォーク用の設定で描かないようにする
 
-## ビルドと入れ替え
+## ビルドと置き方
 
-- `bash fork/build-mac.sh` で `dist/mac-arm64/Orca.app` を作る。バージョンは `1.4.272-local.<時刻>.<コミット>` の形になる
-- バージョンに `-local.` が入ったビルドは、`src/main/updater/updater-fork-local-build.ts` の判定で本家の自動更新を止める。止めないと、公式の更新でフォークの変更が消える
-- `bash fork/install-mac.sh` で `/Applications/Orca.app` を入れ替える。公式の .app は `~/work/tools/orca-official-backup/` に退避する。Orca を終了してから入れ替えるので、Orca の中で動く会話やエージェントは止まる
+フォーク版は「Orca Fork」という別のアプリとして、公式の Orca の横に置く。普段は Orca Fork を使い、壊れたら公式の Orca を開いて戻る。安定した変更だけを `custom` に入れる（2026-11-24 本人の決定）。
+
+- `bash fork/build-mac.sh` で `dist/mac-arm64/Orca Fork.app` を作る。バージョンは `1.4.272-local.<時刻>.<コミット>` の形になる
+- 別名にするのは `config/fork-app-identity.cjs`（`ORCA_FORK_APP=1` のときだけ効く）。バンドル ID は `com.nicovalentine.orca-fork`、データの置き場は `~/Library/Application Support/orca-fork` で、公式の `orca` とは分かれる。`orca://` の URL は公式に任せる
+- バージョンに `-local.` が入ったビルドは、`src/main/updater/updater-fork-local-build.ts` の判定で本家の自動更新を止める
+- `bash fork/install-mac.sh` で `/Applications/Orca Fork.app` を置き換える。公式の `/Applications/Orca.app` には触らない。Orca Fork を終了してから置くので、Orca Fork の中で動く会話やエージェントは止まる
+- `bash fork/import-official-profile.sh` で、公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を Orca Fork に取り込む（Orca Fork を終了してから）。同期ではなく、そのときの写しで、Orca Fork の前のデータは日時付きの名前で横に退避する
+- 公式とフォークで分かれないもの: `~/.orca` の下（エージェントのフック、API キーのファイル、Google などの接続）。鍵はアプリごとの Keychain の鍵で暗号化されるので、Orca の account のサインインと API キーは Orca Fork 側で入れ直す

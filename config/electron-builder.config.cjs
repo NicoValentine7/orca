@@ -861,6 +861,8 @@ module.exports = {
     releaseType: devChannelRepo ? 'prerelease' : 'draft'
   }
 }
+// Fork: ORCA_FORK_APP=1 builds a side-by-side app (see fork-app-identity.cjs).
+module.exports = require('./fork-app-identity.cjs').applyForkAppIdentity(module.exports)
 
 // Stamp the effective channel version where node-mode CLI code can read it.
 function stampPackagedCliVersion(resourcesDir, version) {

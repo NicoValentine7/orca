@@ -1,17 +1,18 @@
 #!/bin/bash
-# 自前ビルドの Orca.app（dist/mac-arm64/Orca.app）を /Applications/Orca.app と入れ替える。
+# 自前ビルドの Orca Fork.app（dist/mac-arm64/Orca Fork.app）を /Applications/Orca Fork.app に置く。
 # 使い方: bash fork/install-mac.sh
 #
-# Orca の中のターミナルや会話から呼んでも途中で止まらないよう、本体の処理は launchd に渡して裏で動かす。
-# 流れ: Orca を終了 → 今の /Applications/Orca.app を退避 → 自前ビルドを置く → Orca を開く。
-# 退避先は ~/work/tools/orca-official-backup/。公式に戻すときは、退避した .app を /Applications/Orca.app に戻す。
-# 記録は ~/Library/Logs/orca-fork-install.log。
+# 公式の /Applications/Orca.app には触らない。フォーク版が壊れたら、公式の Orca を開けば戻れる。
+# Orca Fork の中のターミナルや会話から呼んでも途中で止まらないよう、本体の処理は launchd に渡して裏で動かす。
+# 流れ: Orca Fork を終了 → 今の Orca Fork.app を 1 つ前として退避 → 新しいビルドを置く → Orca Fork を開く。
+# 退避先は ~/work/tools/orca-official-backup/Orca-Fork-previous.app。記録は ~/Library/Logs/orca-fork-install.log。
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-src="$repo/dist/mac-arm64/Orca.app"
-dest="/Applications/Orca.app"
-backup_dir="$HOME/work/tools/orca-official-backup"
+src="$repo/dist/mac-arm64/Orca Fork.app"
+dest="/Applications/Orca Fork.app"
+bundle_id="com.nicovalentine.orca-fork"
+backup="$HOME/work/tools/orca-official-backup/Orca-Fork-previous.app"
 log="$HOME/Library/Logs/orca-fork-install.log"
 label="com.fukuda.orca-fork-install"
 domain="gui/$(id -u)"
@@ -38,38 +39,33 @@ if [ "${1:-}" != "--worker" ]; then
 PLIST
   launchctl bootout "$domain/$label" 2>/dev/null || true
   launchctl bootstrap "$domain" "$plist"
-  echo "裏で入れ替えを始めた。記録: $log"
+  echo "裏で Orca Fork を置き始めた。記録: $log"
   exit 0
 fi
 
 stamp() { date '+%F %T'; }
-main_running() { pgrep -f "^$dest/Contents/MacOS/Orca( |$)" >/dev/null; }
+fork_running() { pgrep -f "^$dest/Contents/MacOS/Orca Fork( |$)" >/dev/null; }
 
-echo "[$(stamp)] 入れ替えを始める: $src"
+echo "[$(stamp)] 置き始める: $src"
 new_version="$(defaults read "$src/Contents/Info.plist" CFBundleShortVersionString)"
 
-osascript -e 'tell application id "com.stablyai.orca" to quit' || true
-for _ in $(seq 1 600); do
-  main_running || break
-  sleep 1
-done
-if main_running; then
-  echo "[$(stamp)] Orca が 10 分たっても終わらないので中止した"
-  exit 1
+if fork_running; then
+  osascript -e "tell application id \"$bundle_id\" to quit" || true
+  for _ in $(seq 1 600); do
+    fork_running || break
+    sleep 1
+  done
+  if fork_running; then
+    echo "[$(stamp)] Orca Fork が 10 分たっても終わらないので中止した"
+    exit 1
+  fi
 fi
 
 if [ -d "$dest" ]; then
-  mkdir -p "$backup_dir"
-  old_version="$(defaults read "$dest/Contents/Info.plist" CFBundleShortVersionString)"
-  if codesign -dv "$dest" 2>&1 | grep -q '^TeamIdentifier=not set'; then
-    # 前の自前ビルドは作り直せるので、1 つだけ残す。
-    target="$backup_dir/Orca-fork-previous.app"
-  else
-    target="$backup_dir/Orca-official-$old_version.app"
-  fi
-  rm -rf "$target"
-  mv "$dest" "$target"
-  echo "[$(stamp)] 退避した: $old_version → $target"
+  mkdir -p "$(dirname "$backup")"
+  rm -rf "$backup"
+  mv "$dest" "$backup"
+  echo "[$(stamp)] 前のビルドを退避した: $backup"
 fi
 
 ditto "$src" "$dest"
