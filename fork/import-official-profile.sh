@@ -16,7 +16,8 @@ support="$HOME/Library/Application Support"
 source_dir="$support/orca"
 target_dir="$support/orca-fork"
 
-if pgrep -f "/Orca Fork.app/Contents/MacOS/Orca Fork( |$)" >/dev/null; then
+# 先頭で絞る。Orca Fork の裏方（デーモン）は引数に本体のパスを持つので、途中一致だと誤って止まる。
+if pgrep -f "^/Applications/Orca Fork.app/Contents/MacOS/Orca Fork( |$)" >/dev/null; then
   echo "Orca Fork を終了してから取り込む" >&2
   exit 1
 fi

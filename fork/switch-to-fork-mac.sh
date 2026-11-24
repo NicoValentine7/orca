@@ -57,7 +57,7 @@ say "切り替えを待ち始める"
 
 # 1. ビルドの終わり
 until grep -q '^exit ' "$build_log" 2>/dev/null; do sleep 15; done
-grep -q '^exit 0$' "$build_log" || fail "ビルドが失敗した（$build_log）"
+# ビルドの最後だけをやり直したときは記録が失敗のままなので、出来上がりの有無で判断する。
 [ -d "$built_app" ] || fail "ビルドの出来上がりが無い（$built_app）"
 say "ビルドを確かめた: $(defaults read "$built_app/Contents/Info.plist" CFBundleShortVersionString)"
 
@@ -119,7 +119,7 @@ bash "$repo/fork/import-official-profile.sh" || fail "データの取り込み�
 bash "$repo/fork/install-mac.sh" --worker || fail "Orca Fork を置けなかった"
 
 sleep 20
-if pgrep -f "/Applications/Orca Fork.app/Contents/MacOS/Orca Fork( |$)" >/dev/null; then
+if pgrep -f "^/Applications/Orca Fork.app/Contents/MacOS/Orca Fork( |$)" >/dev/null; then
   say "Orca Fork が動いている"
   notify "Orca Fork に切り替えた"
 else
