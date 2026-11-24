@@ -14,9 +14,9 @@ set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 log="$HOME/Library/Logs/orca-fork-switch.log"
 build_log="$HOME/Library/Logs/orca-fork-build.log"
-built_app="$repo/dist/mac-arm64/Orca Fork.app"
+built_app="$repo/dist/fork.noindex/mac-arm64/Orca Fork.app"
 orca_app="/Applications/Orca.app"
-backup_dir="$HOME/work/tools/orca-official-backup"
+backup_dir="$HOME/work/tools/orca-official-backup.noindex"
 label="com.fukuda.orca-fork-switch"
 domain="gui/$(id -u)"
 

@@ -1,18 +1,18 @@
 #!/bin/bash
-# 自前ビルドの Orca Fork.app（dist/mac-arm64/Orca Fork.app）を /Applications/Orca Fork.app に置く。
+# 自前ビルドの Orca Fork.app（dist/fork.noindex/mac-arm64/Orca Fork.app）を /Applications/Orca Fork.app に置く。
 # 使い方: bash fork/install-mac.sh
 #
 # 公式の /Applications/Orca.app には触らない。フォーク版が壊れたら、公式の Orca を開けば戻れる。
 # Orca Fork の中のターミナルや会話から呼んでも途中で止まらないよう、本体の処理は launchd に渡して裏で動かす。
 # 流れ: Orca Fork を終了 → 今の Orca Fork.app を 1 つ前として退避 → 新しいビルドを置く → Orca Fork を開く。
-# 退避先は ~/work/tools/orca-official-backup/Orca-Fork-previous.app。記録は ~/Library/Logs/orca-fork-install.log。
+# 退避先は ~/work/tools/orca-official-backup.noindex/Orca-Fork-previous.app。記録は ~/Library/Logs/orca-fork-install.log。
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-src="$repo/dist/mac-arm64/Orca Fork.app"
+src="$repo/dist/fork.noindex/mac-arm64/Orca Fork.app"
 dest="/Applications/Orca Fork.app"
 bundle_id="com.nicovalentine.orca-fork"
-backup="$HOME/work/tools/orca-official-backup/Orca-Fork-previous.app"
+backup="$HOME/work/tools/orca-official-backup.noindex/Orca-Fork-previous.app"
 log="$HOME/Library/Logs/orca-fork-install.log"
 label="com.fukuda.orca-fork-install"
 domain="gui/$(id -u)"

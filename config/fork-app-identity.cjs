@@ -3,6 +3,7 @@
 // - パッケージ名を orca-fork にして、データの置き場を ~/Library/Application Support/orca-fork に分ける
 //   （Electron は userData をパッケージ名から決める。公式の orca と同じだとプロファイルを奪い合う）
 // - orca:// の URL は公式に任せる
+// - 出力を dist/fork.noindex に置き、Spotlight や Launchpad にビルドの .app が並ばないようにする
 'use strict'
 
 const FORK_APP_ID = 'com.nicovalentine.orca-fork'
@@ -20,7 +21,8 @@ function applyForkAppIdentity(config, env = process.env) {
     productName: FORK_PRODUCT_NAME,
     protocols: [],
     extraMetadata: { ...config.extraMetadata, name: FORK_PACKAGE_NAME },
-    publish: null
+    publish: null,
+    directories: { ...config.directories, output: 'dist/fork.noindex' }
   }
 }
 
