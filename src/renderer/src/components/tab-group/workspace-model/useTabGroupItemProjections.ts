@@ -7,6 +7,10 @@ import { resolveUnifiedTabLabel } from '../../../../../shared/workspace-layout/t
 import type { useAppStore } from '../../../store/index'
 import { isEditorTabContentType } from '@/store/slices/editor/tabs/editor-tab-content-type'
 import { openFileIndex } from '@/store/slices/editor/tabs/workspace-editor-files'
+import {
+  isSideChatTab,
+  useSideChatRegistry
+} from '../../side-chat-sidebar/side-chat-sidebar-registry'
 
 type TabGroupAppState = ReturnType<typeof useAppStore.getState>
 
@@ -41,9 +45,14 @@ export function useTabGroupItemProjections({
     () => worktreeState.groups.find((item) => item.id === groupId) ?? null,
     [groupId, worktreeState.groups]
   )
+  const sideChats = useSideChatRegistry((state) => state.entries)
+  // Side chats live in the right sidebar, not the strip.
   const groupTabs = useMemo(
-    () => worktreeState.unifiedTabs.filter((item) => item.groupId === groupId),
-    [groupId, worktreeState.unifiedTabs]
+    () =>
+      worktreeState.unifiedTabs.filter(
+        (item) => item.groupId === groupId && !isSideChatTab(sideChats, item)
+      ),
+    [groupId, sideChats, worktreeState.unifiedTabs]
   )
   const activeItemId = group?.activeTabId ?? null
   const activeTab = groupTabs.find((item) => item.id === activeItemId) ?? null
@@ -132,16 +141,18 @@ export function useTabGroupItemProjections({
 
   const tabBarOrder = useMemo(
     () =>
-      (group?.tabOrder ?? []).map((itemId) => {
+      (group?.tabOrder ?? []).flatMap((itemId) => {
         const item = groupTabById.get(itemId)
         if (!item) {
-          return itemId
+          return worktreeState.unifiedTabs.some((tab) => tab.id === itemId) ? [] : [itemId]
         }
-        return item.contentType === 'terminal' || item.contentType === 'browser'
-          ? item.entityId
-          : item.id
+        return [
+          item.contentType === 'terminal' || item.contentType === 'browser'
+            ? item.entityId
+            : item.id
+        ]
       }),
-    [group, groupTabById]
+    [group, groupTabById, worktreeState.unifiedTabs]
   )
 
   return {
