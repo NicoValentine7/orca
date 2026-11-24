@@ -23,5 +23,6 @@
 - 別名にするのは `config/fork-app-identity.cjs`（`ORCA_FORK_APP=1` のときだけ効く）。バンドル ID は `com.nicovalentine.orca-fork`、データの置き場は `~/Library/Application Support/orca-fork` で、公式の `orca` とは分かれる。`orca://` の URL は公式に任せる
 - バージョンに `-local.` が入ったビルドは、`src/main/updater/updater-fork-local-build.ts` の判定で本家の自動更新を止める
 - `bash fork/install-mac.sh` で `/Applications/Orca Fork.app` を置き換える。公式の `/Applications/Orca.app` には触らない。Orca Fork を終了してから置くので、Orca Fork の中で動く会話やエージェントは止まる
+- 前の運用（`/Applications/Orca.app` をフォーク版に入れ替えた状態）からは、`bash fork/switch-to-fork-mac.sh` で 1 回だけ移る。ビルドの終わりと、動いているエージェントが止まるのを待ってから、公式の Orca.app に戻し、データを取り込み、Orca Fork を開く
 - `bash fork/import-official-profile.sh` で、公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を Orca Fork に取り込む（Orca Fork を終了してから）。同期ではなく、そのときの写しで、Orca Fork の前のデータは日時付きの名前で横に退避する
 - 公式とフォークで分かれないもの: `~/.orca` の下（エージェントのフック、API キーのファイル、Google などの接続）。鍵はアプリごとの Keychain の鍵で暗号化されるので、Orca の account のサインインと API キーは Orca Fork 側で入れ直す
