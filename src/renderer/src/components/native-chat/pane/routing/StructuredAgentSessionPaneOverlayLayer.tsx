@@ -15,6 +15,10 @@ import { NativeChatComposerEditorOwner } from '../../composer/editor/native-chat
 import { NativeChatHostOutageOwner } from '../../host-access/native-chat-host-outage-owner'
 import { NativeChatPaneLifetime } from '../ownership/native-chat-pane-lifetime'
 import { isStructuredTab } from '../../../../../../shared/agent-session/view/structured-agent-session-tab'
+import {
+  isSideChatTab,
+  useSideChatRegistry
+} from '../../../side-chat-sidebar/side-chat-sidebar-registry'
 
 type StructuredAgentSessionTab = Tab & {
   contentType: 'agent-session'
@@ -147,9 +151,15 @@ const StructuredAgentSessionPaneOverlayLayer = memo(
       () => new Map(groups.map((group) => [group.id, group.activeTabId] as const)),
       [groups]
     )
+    const sideChats = useSideChatRegistry((state) => state.entries)
+    // The right sidebar mounts side chats; mounting them here too would race for the same session.
     const structuredTabs = useMemo(
-      () => unifiedTabs.filter((tab): tab is StructuredAgentSessionTab => isStructuredTab(tab)),
-      [unifiedTabs]
+      () =>
+        unifiedTabs.filter(
+          (tab): tab is StructuredAgentSessionTab =>
+            isStructuredTab(tab) && !isSideChatTab(sideChats, tab)
+        ),
+      [sideChats, unifiedTabs]
     )
     const roomTabs = useMemo(
       () => unifiedTabs.filter((tab) => tab.contentType === 'room'),
