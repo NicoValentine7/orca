@@ -24155,6 +24155,12 @@
         "filesStayLine": "Its files stay on {{host}}.",
         "removing": "Removing…"
       }
+    },
+    "sideChatSidebar": {
+      "tab": "Side chat",
+      "empty": "Send /btw <question> in a chat to open a side chat here.",
+      "moveToTab": "Open as tab",
+      "close": "Close side chat"
     }
   },
   "dashboardPopout": {

@@ -29,6 +29,7 @@ import { useBots } from '@/lib/bot-catalog'
 import type { Bot } from '../../../../../shared/bot-types'
 import type { BotGroup } from '../../../../../shared/bots/bot-group'
 import { botGroupMemberBots } from '../../../../../shared/bots/bot-sidebar-entries'
+import { useFocusedSideChats } from '../../side-chat-sidebar/use-focused-side-chats'
 
 const NO_BOTS: readonly Bot[] = []
 
@@ -82,6 +83,7 @@ export function useRightSidebarActivityItems({
   // The same read as Activity's count, so connector reads aren't repeated for the tab.
   const connectorsNeedingOwner = needs.filter((need) => need.kind === 'connector').length
   const hasChatWorkers = useFocusedChatWorkers(rightSidebarOpen && !isBot).workers.length > 0
+  const hasSideChats = useFocusedSideChats().sideTabs.length > 0
   // Why the owner: a managed server's workspace names its server, not an SSH connection.
   const hasSshHost = useAppStore((s) =>
     portsPanelReachesSshHost(
@@ -148,9 +150,19 @@ export function useRightSidebarActivityItems({
         hasSshHost,
         isBot,
         isGroupHome,
-        hasChatWorkers
+        hasChatWorkers,
+        hasSideChats
       }),
-    [activityItems, isFolder, isFolderWorkspace, hasSshHost, isBot, isGroupHome, hasChatWorkers]
+    [
+      activityItems,
+      isFolder,
+      isFolderWorkspace,
+      hasSshHost,
+      isBot,
+      isGroupHome,
+      hasChatWorkers,
+      hasSideChats
+    ]
   )
 
   const activeFolderWorkspaceKey = isFolderWorkspace ? (activeWorktreeId ?? null) : null

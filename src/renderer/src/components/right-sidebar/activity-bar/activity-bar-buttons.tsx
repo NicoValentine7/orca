@@ -36,6 +36,8 @@ export type ActivityBarItem = {
   sshOnly?: boolean
   /** When true, shown on a bot's page, and for a chat whose workers it lists. */
   botOnly?: boolean
+  /** When true, shown only while the focused chat has side chats. */
+  sideChatOnly?: boolean
   /** When true, shown only on a bot's page. */
   botPageOnly?: boolean
   /** When true, also shown on a bot's page, which hides every other panel. */

@@ -33,7 +33,7 @@ import {
   type NativeChatSideChatRequest
 } from '@/components/native-chat/messages/actions/native-chat-fork-launch'
 import type { NativeChatStructuredViewProps } from '@/components/native-chat/native-chat-view-types'
-import { beginNativeChatSideChatPlacement } from '@/components/native-chat/messages/actions/native-chat-side-chat-placement'
+import { beginSideChatSidebarPlacement } from '@/components/side-chat-sidebar/side-chat-sidebar-placement'
 import {
   useNativeChatSideChat,
   type NativeChatSideChat
@@ -116,7 +116,7 @@ export function useNativeChatFork(input: {
       }
       inFlight.current = true
       setPendingItemId(throughItemId)
-      const placement = side ? beginNativeChatSideChatPlacement(worktreeId, tabId) : undefined
+      const placement = side ? beginSideChatSidebarPlacement(worktreeId, tabId) : undefined
       let outcome: NativeChatForkOutcome = {}
       return launchNativeChatFork({
         agent,

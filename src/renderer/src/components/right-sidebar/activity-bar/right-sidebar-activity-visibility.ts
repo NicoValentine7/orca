@@ -11,6 +11,8 @@ type RightSidebarActivityVisibilityState = {
   isGroupHome?: boolean
   /** The focused native chat has started orchestration workers, which the Activity panel lists. */
   hasChatWorkers?: boolean
+  /** The focused native chat has side chats shown in the sidebar. */
+  hasSideChats?: boolean
 }
 
 export function getVisibleRightSidebarActivityItems(
@@ -21,7 +23,8 @@ export function getVisibleRightSidebarActivityItems(
     hasSshHost,
     isBot,
     isGroupHome = false,
-    hasChatWorkers = false
+    hasChatWorkers = false,
+    hasSideChats = false
   }: RightSidebarActivityVisibilityState
 ): ActivityBarItem[] {
   if (isGroupHome) {
@@ -38,6 +41,7 @@ export function getVisibleRightSidebarActivityItems(
   return items.filter(
     (item) =>
       !item.botPageOnly &&
+      (!item.sideChatOnly || hasSideChats) &&
       (item.botOnly
         ? hasChatWorkers
         : (!item.gitOnly ||
