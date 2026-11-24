@@ -4,6 +4,7 @@ import {
   GitBranch,
   House,
   ListChecks,
+  MessageSquareText,
   MessagesSquare,
   Plug,
   Workflow
@@ -85,6 +86,13 @@ export function getDefaultRightSidebarActivityItems({
       shortcut: '',
       botPageOnly: true,
       labeledTab: isBot
+    },
+    {
+      id: 'side-chat',
+      icon: MessageSquareText,
+      title: t('components.sideChatSidebar.tab', 'Side chat'),
+      shortcut: '',
+      sideChatOnly: true
     },
     {
       id: 'vault',
