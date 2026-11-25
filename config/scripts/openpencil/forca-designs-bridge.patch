@@ -5,12 +5,53 @@ index 3425aac..0000000
 +++ /dev/null
 @@ -1 +0,0 @@
 -ko_fi: dannote
+diff --git a/packages/vue/src/editor/viewport-kind/use.ts b/packages/vue/src/editor/viewport-kind/use.ts
+index 1b0d8df..9723ee4 100644
+--- a/packages/vue/src/editor/viewport-kind/use.ts
++++ b/packages/vue/src/editor/viewport-kind/use.ts
+@@ -9,7 +9,11 @@ const breakpoints = useBreakpoints({ mobile: 768 })
+  * touch-sized controls, so a narrow desktop window keeps mouse-sized ones.
+  */
+ export function useViewportKind() {
+-  const isMobile = breakpoints.smaller('mobile')
++  const narrow = breakpoints.smaller('mobile')
++  // forca's Designs panel is a desktop editor however narrow the panel is.
++  const inForca =
++    typeof document !== 'undefined' && document.documentElement.dataset.forca !== undefined
++  const isMobile = computed(() => !inForca && narrow.value)
+   const isDesktop = computed(() => !isMobile.value)
+   const isTouch = useMediaQuery('(pointer: coarse)')
+ 
+diff --git a/src/app/ai/chat/history/document.ts b/src/app/ai/chat/history/document.ts
+index 6eea583..cd45373 100644
+--- a/src/app/ai/chat/history/document.ts
++++ b/src/app/ai/chat/history/document.ts
+@@ -9,13 +9,18 @@ export type ChatDocumentEditor = Pick<
+ 
+ const fileIds = new WeakMap<FileSystemFileHandle, string>()
+ 
++/** forca's designs/ handles cannot be stored in IndexedDB, so they carry their own identity. */
++function forcaDesignId(handle: FileSystemFileHandle): string | undefined {
++  return (handle as { forcaDesignId?: string }).forcaDesignId
++}
++
+ export async function resolveChatDocumentId(
+   editor: ChatDocumentEditor,
+   store: ConversationStore
+ ): Promise<string> {
+   const handle = editor.getSourceIdentity().handle
+   if (handle && !editor.getStorageBinding() && !editor.getDocumentFilePath()) {
+-    const id = fileIds.get(handle) ?? (await store.resolveFile(handle))
++    const id = fileIds.get(handle) ?? forcaDesignId(handle) ?? (await store.resolveFile(handle))
+     fileIds.set(handle, id)
+     return id
+   }
 diff --git a/src/app/forca/designs-bridge.ts b/src/app/forca/designs-bridge.ts
 new file mode 100644
-index 0000000..bb67be2
+index 0000000..d81e22c
 --- /dev/null
 +++ b/src/app/forca/designs-bridge.ts
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,92 @@
 +import { watch } from 'vue'
 +
 +import type { EditorStore } from '@/app/editor/session'
@@ -44,6 +85,7 @@ index 0000000..bb67be2
 +  const handle = {
 +    kind: 'file' as const,
 +    name,
++    forcaDesignId: `forca-design:${name}`,
 +    getFile: async () => new File([current.slice()], name, { lastModified: modified }),
 +    isSameEntry: async (other: unknown) => other === handle,
 +    queryPermission: async () => 'granted' as const,
@@ -100,6 +142,7 @@ index 0000000..bb67be2
 +    }
 +  )
 +  host.onFlush(writeNow)
++  host.onFit(() => void store.fitCurrentPageToViewport())
 +}
 diff --git a/src/app/forca/host.css b/src/app/forca/host.css
 new file mode 100644
@@ -160,10 +203,10 @@ index 0000000..83de41c
 +}
 diff --git a/src/app/forca/host.ts b/src/app/forca/host.ts
 new file mode 100644
-index 0000000..5dbc6d6
+index 0000000..504659f
 --- /dev/null
 +++ b/src/app/forca/host.ts
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,63 @@
 +import { updateAISetupState } from '@/app/settings/preferences/store'
 +import { setAppTheme } from '@/app/shell/theme'
 +
@@ -184,13 +227,15 @@ index 0000000..5dbc6d6
 +  onTheme(listener: (theme: ForcaTheme) => void): void
 +  /** forca calls this before it removes the page, so the last edit is written first. */
 +  onFlush(handler: () => Promise<void>): void
++  /** forca calls this when the panel grows or shrinks, so the whole page shows again. */
++  onFit(handler: () => void): void
 +}
 +
 +const FORCA_INTERFACE_FONT = { family: 'Geist', url: '/forca/Geist-Variable.woff2' }
 +
 +export function forcaHost(): ForcaHost | null {
 +  const host = (globalThis as { forcaDesigns?: Partial<ForcaHost> }).forcaDesigns
-+  return host?.open && host.write && host.theme && host.onTheme && host.onFlush
++  return host?.open && host.write && host.theme && host.onTheme && host.onFlush && host.onFit
 +    ? (host as ForcaHost)
 +    : null
 +}
@@ -283,3 +328,33 @@ index 08a2cb2..afe9bf9 100644
      <template #leading><icon-lucide-share-2 class="size-3.5" /></template>
    </HudButton>
  </template>
+diff --git a/src/components/editor/EditorWorkspace.vue b/src/components/editor/EditorWorkspace.vue
+index 96fae75..0dc1d91 100644
+--- a/src/components/editor/EditorWorkspace.vue
++++ b/src/components/editor/EditorWorkspace.vue
+@@ -57,14 +57,22 @@ const { width: workspaceWidth } = useElementSize(() => {
+ })
+ /** The narrowest a sidebar may get at a larger interface size, in rem so it grows with it. */
+ const MIN_SIDEBAR_REM = 15
++/** In forca's narrow Designs panel a share of the width alone would squeeze the panels' fields. */
++const FORCA_MIN_SIDEBAR_REM = 11
++const inForca = document.documentElement.dataset.forca !== undefined
+ const MAX_SCALED_SIDEBAR_PERCENT = 35
+ // Retain usable fields at larger scales, while leaving at least 30% for the canvas.
+ const sidebarMinimum = computed(() =>
+-  interfaceScale.value > 1 && workspaceWidth.value > 0
+-    ? Math.min(MAX_SCALED_SIDEBAR_PERCENT, (remToPx(MIN_SIDEBAR_REM) * 100) / workspaceWidth.value)
++  (interfaceScale.value > 1 || inForca) && workspaceWidth.value > 0
++    ? Math.min(
++        MAX_SCALED_SIDEBAR_PERCENT,
++        (remToPx(inForca ? FORCA_MIN_SIDEBAR_REM : MIN_SIDEBAR_REM) * 100) / workspaceWidth.value
++      )
+     : 10
+ )
+-const sidebarMaximum = computed(() => (interfaceScale.value > 1 ? MAX_SCALED_SIDEBAR_PERCENT : 30))
++const sidebarMaximum = computed(() =>
++  interfaceScale.value > 1 || inForca ? MAX_SCALED_SIDEBAR_PERCENT : 30
++)
+ // Constraints may temporarily widen either sidebar without changing the user's preference.
+ const preferredLayout = ref(loadEditorLayout())
+ const leftSize = computed(() =>
