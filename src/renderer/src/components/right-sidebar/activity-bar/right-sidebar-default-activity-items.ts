@@ -6,6 +6,7 @@ import {
   ListChecks,
   MessageSquareText,
   MessagesSquare,
+  PenTool,
   Plug,
   Workflow
 } from 'lucide-react'
@@ -127,6 +128,12 @@ export function getDefaultRightSidebarActivityItems({
       title: t('auto.components.right.sidebar.index.83a10e3c44', 'Checks'),
       shortcut: checksShortcut === 'Unassigned' ? '' : checksShortcut,
       gitOnly: true
+    },
+    {
+      id: 'designs',
+      icon: PenTool,
+      title: t('designs.panel.tab', 'Designs'),
+      shortcut: ''
     },
     {
       id: 'ports',
