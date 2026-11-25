@@ -54,6 +54,7 @@ import { useWindowWidth } from './layout/use-window-width'
 import { useBotPanelMemory } from '../bots/use-bot-panel-memory'
 import { usePluginViewCaptureStore } from '@/store/plugins/capture/plugin-view-capture'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
+import { useDesignsExpanded } from './designs/designs-expanded'
 
 function RightSidebarInner(): React.JSX.Element {
   const t = useTranslate()
@@ -169,11 +170,11 @@ function RightSidebarInner(): React.JSX.Element {
   const activityBarSideWidth = activityBarPosition === 'side' ? ACTIVITY_BAR_SIDE_WIDTH : 0
   const windowWidth = useWindowWidth()
   const maxWidth = computeMaxRightSidebarPanelWidth(windowWidth, activityBarSideWidth)
-  const renderedRightSidebarWidth = clampRightSidebarPanelWidth(
-    rightSidebarWidth,
-    windowWidth,
-    activityBarSideWidth
-  )
+  const designsExpanded =
+    useDesignsExpanded() && effectiveTab === 'designs' && captureWidth === null
+  const renderedRightSidebarWidth = designsExpanded
+    ? maxWidth
+    : clampRightSidebarPanelWidth(rightSidebarWidth, windowWidth, activityBarSideWidth)
   const { containerRef, isResizing, onResizeStart } = useSidebarResize<HTMLDivElement>({
     isOpen: rightSidebarOpen,
     width: renderedRightSidebarWidth,
@@ -348,7 +349,8 @@ function RightSidebarInner(): React.JSX.Element {
             ref={resizeHandleRef}
             className={cn(
               'absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-ring/20 data-[gutter-hover]:bg-ring/20 active:bg-ring/30 transition-colors z-10',
-              isResizing && 'bg-ring/30'
+              isResizing && 'bg-ring/30',
+              designsExpanded && 'hidden'
             )}
             onMouseDown={onResizeStart}
           />

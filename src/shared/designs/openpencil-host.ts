@@ -19,7 +19,8 @@ export const DESIGNS_CHANNELS = {
 export const DESIGNS_GUEST_MESSAGES = {
   theme: 'designs:guest-theme',
   flush: 'designs:guest-flush',
-  flushed: 'designs:guest-flushed'
+  flushed: 'designs:guest-flushed',
+  fit: 'designs:guest-fit'
 } as const
 
 /** forca tokens OpenPencil's interface is restyled from, sent as `--orca-<name>`. */

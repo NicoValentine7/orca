@@ -30955,7 +30955,9 @@
       "back": "Back to designs",
       "homeTitle": "OpenPencil home",
       "guestTitle": "OpenPencil",
-      "folder": "designs/"
+      "folder": "designs/",
+      "expand": "Expand to the full window",
+      "collapse": "Back to the sidebar width"
     }
   }
 }
