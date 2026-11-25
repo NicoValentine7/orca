@@ -22,6 +22,7 @@
 - `bash fork/build-mac.sh` で `dist/fork.noindex/mac-arm64/fOrca.app` を作る。バージョンは `1.4.272-local.<時刻>.<コミット>` の形になる
 - 名前は fOrca、アイコンは暗い緑とミントで左上に f の札（`resources/build/fork/icon.icns`。本家のアイコンが変わったら `swift fork/make-icon.swift resources/build/icon.png resources/build/fork/icon.png` で作り直し、iconutil で icns にする）
 - 別名にするのは `config/fork-app-identity.cjs`（`ORCA_FORK_APP=1` のときだけ効く）。バンドル ID は `com.nicovalentine.orca-fork`、データの置き場は `~/Library/Application Support/orca-fork` で、公式の `orca` とは分かれる。`orca://` の URL は公式に任せる
+- 置き場の名前の正本は `resources/build/fork/orca-app-identity.json`。ビルドで Resources にも入り、Orca の外（launchd、普通のターミナル）から呼んだ fOrca の CLI もそれを読んで `orca-fork` を見る。CLI の入口（`resources/darwin/bin/orca`）は実行ファイルの名前を Info.plist から読むので、`orca open` なども fOrca を起動する
 - バージョンに `-local.` が入ったビルドは、`src/main/updater/updater-fork-local-build.ts` の判定で本家の自動更新を止める
 - ビルドの出力と退避した .app は、名前が `.noindex` で終わるフォルダ（`dist/fork.noindex/`、`~/work/tools/orca-official-backup.noindex/`）に置く。Spotlight と Launchpad はこのフォルダの中を拾わないので、検索に Orca が何個も並ばない
 - `bash fork/install-mac.sh` で `/Applications/fOrca.app` を置き換える。公式の `/Applications/Orca.app` には触らない。fOrca を終了してから置くので、fOrca の中で動く会話やエージェントは止まる
