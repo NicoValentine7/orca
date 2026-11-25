@@ -5,6 +5,7 @@ import { BotChatsSkeleton } from '../bots/BotChatsSkeleton'
 import type { ActiveRightSidebarTab } from '../../../../shared/ui-chrome/ui-chrome-types'
 import '../../../../shared/plugins/manifest/plugin-manifest'
 import { isPluginPanelTabKey } from '../../../../shared/plugins/frames/plugin-tab-key'
+import { useDesignsPanelRetained } from './designs/designs-panel-retention'
 
 const FileExplorer = lazy(() => import('./file-explorer/panel/FileExplorer'))
 const FolderWorkspaceSourceControl = lazy(
@@ -42,6 +43,7 @@ export function RightSidebarPanelContent({
   const isFolderWorkspace = useAppStore(
     (state) => state.activeWorkspaceKey?.startsWith('folder:') ?? false
   )
+  const designsRetained = useDesignsPanelRetained(effectiveTab === 'designs')
   return (
     <div
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
@@ -75,7 +77,11 @@ export function RightSidebarPanelContent({
             isVisible={rightSidebarOpen && effectiveTab === 'pr-checks'}
           />
         )}
-        {effectiveTab === 'designs' && <DesignsPanel />}
+        {designsRetained && (
+          <div className={effectiveTab === 'designs' ? 'contents' : 'hidden'}>
+            <DesignsPanel />
+          </div>
+        )}
         {effectiveTab === 'bot-activity' && <BotActivityPanel />}
         {effectiveTab === 'bot-connectors' && <BotConnectorsPanel />}
         {effectiveTab === 'bot-chats' && <BotChatsPanel />}
