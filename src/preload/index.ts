@@ -56,6 +56,7 @@ import { computerUsePermissionsApi } from './api/desktop-permissions/computer-us
 import { shellApi } from './api/terminal/shell-bridge'
 import { botChangesApi } from './api/bot-changes-bridge'
 import { googleSetupApi } from './api/google-setup-bridge'
+import { designsApi } from './api/designs/designs-bridge'
 import { slackHandOffApi } from './api/slack-hand-off-bridge'
 import { avatarGenerationApi } from './api/avatar-generation-bridge'
 import { skillsApi } from './api/skills/skills-bridge'
@@ -171,6 +172,7 @@ const api = {
   shell: shellApi,
   botChanges: botChangesApi,
   googleSetup: googleSetupApi,
+  designs: designsApi,
   slackHandOff: slackHandOffApi,
   avatarGeneration: avatarGenerationApi,
   skills: skillsApi,

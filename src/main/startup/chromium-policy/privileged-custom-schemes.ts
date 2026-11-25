@@ -4,6 +4,7 @@ import { JIRA_IMAGE_CUSTOM_SCHEME } from '../../jira/attachments/image-protocol'
 import { MEDIA_PREVIEW_CUSTOM_SCHEME } from '../../media/media-preview-protocol'
 import { PLUGIN_IMAGE_CUSTOM_SCHEME } from '../../plugins/media/plugin-image-scheme'
 import { PLUGIN_FRAME_CUSTOM_SCHEME } from '../../plugins/panels/guest-isolation/plugin-frame-scheme'
+import { OPENPENCIL_CUSTOM_SCHEME } from '../../designs/openpencil-scheme'
 
 /** Registered with doc preview's in one call: each registerSchemesAsPrivileged call replaces the last. */
 export const PRIVILEGED_CUSTOM_SCHEMES: Electron.CustomScheme[] = [
@@ -12,5 +13,6 @@ export const PRIVILEGED_CUSTOM_SCHEMES: Electron.CustomScheme[] = [
   BROWSER_EXTENSION_API_CUSTOM_SCHEME,
   PLUGIN_IMAGE_CUSTOM_SCHEME,
   PLUGIN_FRAME_CUSTOM_SCHEME,
-  CONNECTOR_AVATAR_CUSTOM_SCHEME
+  CONNECTOR_AVATAR_CUSTOM_SCHEME,
+  OPENPENCIL_CUSTOM_SCHEME
 ]

@@ -2,6 +2,7 @@ import { installDocPreviewProtocolHandler } from '../browser/document-preview/do
 import { installMediaPreviewProtocolHandler } from '../media/media-preview-protocol'
 import { installJiraImageProtocolHandler } from '../jira/attachments/image-protocol'
 import { installConnectorAvatarProtocolHandler } from '../connector-avatars/connector-avatar-protocol'
+import { installDesignsHost } from '../designs/designs-host'
 
 /** The protocol-scoped preview handlers, which must exist before any webview attaches. */
 export function installPreviewProtocolHandlers(): void {
@@ -9,4 +10,5 @@ export function installPreviewProtocolHandlers(): void {
   installJiraImageProtocolHandler()
   installConnectorAvatarProtocolHandler()
   installDocPreviewProtocolHandler()
+  installDesignsHost()
 }
