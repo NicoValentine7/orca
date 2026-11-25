@@ -1,0 +1,121 @@
+diff --git a/src/app/forca/designs-bridge.ts b/src/app/forca/designs-bridge.ts
+new file mode 100644
+index 0000000..d48b76a
+--- /dev/null
++++ b/src/app/forca/designs-bridge.ts
+@@ -0,0 +1,88 @@
++import { watch } from 'vue'
++
++import type { EditorStore } from '@/app/editor/session'
++import { openFileInNewTab } from '@/app/tabs/open/file'
++import { createDocumentTab } from '@/app/tabs/state'
++
++/** What forca's Designs panel exposes to this page through its preload. */
++interface ForcaDesigns {
++  /** The designs/ file the panel opened, or null when the panel shows OpenPencil's own home. */
++  open(): Promise<{ name: string; bytes: Uint8Array } | null>
++  write(bytes: Uint8Array): Promise<void>
++}
++
++const AUTOSYNC_DELAY_MS = 600
++
++function concat(chunks: Uint8Array[]): Uint8Array {
++  const out = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.byteLength, 0))
++  let offset = 0
++  for (const chunk of chunks) {
++    out.set(chunk, offset)
++    offset += chunk.byteLength
++  }
++  return out
++}
++
++export function forcaDesigns(): ForcaDesigns | null {
++  const host = (globalThis as { forcaDesigns?: Partial<ForcaDesigns> }).forcaDesigns
++  return host?.open && host.write ? (host as ForcaDesigns) : null
++}
++
++/**
++ * Opens the designs/ file forca handed over and writes each save back to it through a file
++ * handle, so OpenPencil's own save path is the only writer.
++ */
++export async function startForcaDesignsBridge(host: ForcaDesigns): Promise<void> {
++  const opened = await host.open()
++  if (!opened) return
++  const { name } = opened
++  let current = opened.bytes
++  let modified = Date.now()
++
++  const handle = {
++    kind: 'file' as const,
++    name,
++    getFile: async () => new File([current.slice()], name, { lastModified: modified }),
++    isSameEntry: async (other: unknown) => other === handle,
++    queryPermission: async () => 'granted' as const,
++    requestPermission: async () => 'granted' as const,
++    createWritable: async () => {
++      const chunks: Uint8Array[] = []
++      return new WritableStream<Uint8Array | ArrayBuffer>({
++        write(chunk) {
++          chunks.push(chunk instanceof Uint8Array ? chunk.slice() : new Uint8Array(chunk))
++        },
++        async close() {
++          current = concat(chunks)
++          modified = Date.now()
++          await host.write(current)
++        }
++      })
++    }
++  } as unknown as FileSystemFileHandle
++
++  let store: EditorStore
++  if (current.byteLength > 0) {
++    store = await openFileInNewTab(new File([current.slice()], name), { handle })
++  } else {
++    store = createDocumentTab('design').store
++    store.setDocumentSource(name, 'fig', handle)
++  }
++
++  let timer: ReturnType<typeof setTimeout> | undefined
++  const schedule = () => {
++    clearTimeout(timer)
++    timer = setTimeout(async () => {
++      await store
++        .saveFigFile()
++        .catch((error: unknown) => console.error('[forca] design write failed', error))
++      if (store.hasUnsavedChanges()) schedule()
++    }, AUTOSYNC_DELAY_MS)
++  }
++  watch(
++    () => store.hasUnsavedChanges(),
++    (dirty) => {
++      if (dirty) schedule()
++    }
++  )
++}
+diff --git a/src/app/shell/updater/web.ts b/src/app/shell/updater/web.ts
+index a2065a6..54c1f11 100644
+--- a/src/app/shell/updater/web.ts
++++ b/src/app/shell/updater/web.ts
+@@ -159,7 +159,7 @@ export function takeWebUpdate(update: WaitingUpdate): void {
+  */
+ export function useWebUpdates(): void {
+   // Plain HTTP away from localhost has no service workers, as some browsers do not.
+-  if (IS_TAURI || !('serviceWorker' in navigator)) return
++  if (IS_TAURI || !('serviceWorker' in navigator) || location.protocol === 'forca-openpencil:') return
+   const overlays = useOpenOverlays()
+   // A first visit's worker taking control of the page is no new version.
+   const controlledAtStart = navigator.serviceWorker.controller !== null
+diff --git a/src/boot.ts b/src/boot.ts
+index 951c3ab..6f596c6 100644
+--- a/src/boot.ts
++++ b/src/boot.ts
+@@ -50,6 +50,9 @@ export async function boot(): Promise<void> {
+ 
+   await router.isReady()
+   await nextTick()
++  const { forcaDesigns, startForcaDesignsBridge } = await import('@/app/forca/designs-bridge')
++  const designs = forcaDesigns()
++  if (designs) void startForcaDesignsBridge(designs).catch((error: unknown) => console.error('[forca]', error))
+   const failure = bootErrors.stop()
+   if (failure) {
+     await reportBootFailure(failure.error)

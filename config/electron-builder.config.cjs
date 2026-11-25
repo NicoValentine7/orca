@@ -190,7 +190,11 @@ const commonExtraResources = [
   skillFreshnessResources,
   ...agentBrowserSkillResources,
   nativeChatVisualsResource,
-  emojiShortcodeDatasetResource
+  emojiShortcodeDatasetResource,
+  // The Designs panel's OpenPencil build; absent until `pnpm openpencil:build` runs.
+  ...(existsSync('resources/openpencil')
+    ? [{ from: 'resources/openpencil', to: 'openpencil' }]
+    : [])
 ]
 // electron-builder replaces these defaults when `depends` is configured; retain
 // Electron's loader requirements alongside Orca's headless-host dependencies.
@@ -340,6 +344,7 @@ module.exports = {
     '!resources/native-chat-visuals/**',
     // extraResources already ships plugin bytes; exclude source duplicates.
     '!resources/plugins/launch/**',
+    '!resources/openpencil/**',
     // afterPack copies the target's speech engine to resources/node_modules; asar would duplicate it and ship other variants.
     '!node_modules/{transcribe-cpp,@transcribe-cpp,koffi,@koromix}{,/**/*}',
     // CLI shim belongs beside resources/bin/orca.exe; unpacking source creates a second .cmd without its executable (#7351).
