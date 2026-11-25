@@ -163,3 +163,7 @@ ci-shards/
 /.build/windows-native-benchmark/
 
 .local/static-analysis-research/
+
+# OpenPencil for the Designs panel: built by pnpm openpencil:build, never committed.
+/.cache/openpencil/
+/resources/openpencil/

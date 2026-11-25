@@ -150,6 +150,7 @@
     "sync:mobile-localization": "node config/scripts/localization/catalog-validation/verify-mobile-localization.mjs --fix",
     "verify:mobile-localization-coverage": "node config/scripts/localization/source-extraction/audit-localization-coverage.mjs --check --source-root mobile/app --source-root mobile/src --source-root mobile/web-entry --allowlist config/mobile-localization-coverage-allowlist.json",
     "audit:localization": "node config/scripts/localization/source-extraction/audit-localization-coverage.mjs",
+    "openpencil:build": "node config/scripts/openpencil/build-openpencil.mjs",
     "i18n:reactive-translate": "node config/scripts/localization/reactive-translate/codemod-reactive-translate.mjs",
     "audit:translate-helpers": "node config/scripts/localization/reactive-translate/report-translate-helpers.mjs",
     "build:cli": "pnpm run build:packages && node config/scripts/cli-build/build-cli.mjs && pnpm run prepare:cli-output",
