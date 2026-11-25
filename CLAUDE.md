@@ -27,4 +27,5 @@
 - `bash fork/install-mac.sh` で `/Applications/fOrca.app` を置き換える。公式の `/Applications/Orca.app` には触らない。fOrca を終了してから置くので、fOrca の中で動く会話やエージェントは止まる
 - 前の運用（`/Applications/Orca.app` をフォーク版に入れ替えた状態）からは、`bash fork/switch-to-fork-mac.sh` で 1 回だけ移る。ビルドの終わりと、動いているエージェントが止まるのを待ってから、公式の Orca.app に戻し、データを取り込み、fOrca を開く
 - `bash fork/import-official-profile.sh` で、公式の Orca のプロジェクト・ワークスペース・設定・SSH の接続先を fOrca に取り込む（fOrca を終了してから）。同期ではなく、そのときの写しで、fOrca の前のデータは日時付きの名前で横に退避する
+- この取り込みは Bots を持ってこないので、続けて `bash fork/import-official-bots.sh` で写す。エージェントが止まるのを待って fOrca を終了し、写してから開き直す。公式と fOrca を同時に開くと同じ Bot の見回りが 2 回走る
 - 公式とフォークで分かれないもの: `~/.orca` の下（エージェントのフック、API キーのファイル、Google などの接続）。鍵はアプリごとの Keychain の鍵で暗号化されるので、Orca の account のサインインと API キーは fOrca 側で入れ直す
