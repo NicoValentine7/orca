@@ -55,6 +55,10 @@ import {
 } from '../../browser/extensions/side-panel/browser-extension-side-panel-attach'
 import { associateBrowserExtensionSidePanelGuest } from '../../browser/extensions/side-panel/browser-extension-side-panel-guests'
 import { WEB_CONTENTS_MAX_LISTENERS_PER_EVENT } from '../web-contents-listener-budget'
+import {
+  admitOpenPencilGuestAttach,
+  isOpenPencilPartition
+} from '../../designs/openpencil-guest-attach'
 
 /** orca-preview is outside normal browser URL admission; require the doc partition and a main-minted user-preview grant. */
 function isAdmissibleDocPreviewAttach(partition: string, src: string): boolean {
@@ -121,6 +125,7 @@ export function installMainWindowWebviewSecurity(mainWindow: BrowserWindow): voi
   // Only previews get this pinned editor-link preload; never accept renderer preload values or expose it to browsing guests.
   const docPreviewLinkPreload = join(__dirname, 'doc-preview-link-preload.js')
   const pluginFrameGuestPreload = join(__dirname, 'plugin-frame-guest-preload.js')
+  const openPencilGuestPreload = join(__dirname, 'openpencil-guest-preload.js')
   mainWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
     const src = typeof params.src === 'string' ? params.src : ''
     let attachArgument: string | null = null
@@ -135,6 +140,12 @@ export function installMainWindowWebviewSecurity(mainWindow: BrowserWindow): voi
       hardenPluginFrameGuestPreferences(webPreferences, pluginFrameGuestPreload, partition)
       delete params.preload
       delete params.allowpopups
+      return
+    }
+    if (isOpenPencilPartition(partition)) {
+      if (!admitOpenPencilGuestAttach(webPreferences, params, openPencilGuestPreload)) {
+        event.preventDefault()
+      }
       return
     }
     const profileId = browserSessionRegistry.profileIdForPartition(partition)

@@ -64,6 +64,7 @@ import type { KeybindingsApi, SettingsApi } from './api/preferences/settings-api
 import type { ShellApi } from './api/terminal/shell-api'
 import type { BotChangesApi } from './api/bot-changes-api'
 import type { GoogleSetupApi } from './api/google-setup-api'
+import type { DesignsApi } from './api/designs/designs-api'
 import type { SlackHandOffApi } from './api/slack-hand-off-api'
 import type { AvatarGenerationApi } from '../shared/avatar-generation/avatar-generation-contract'
 import type { SpeechApi } from './api/speech/speech-api'
@@ -148,6 +149,7 @@ export type PreloadApi = {
   shell: ShellApi
   botChanges: BotChangesApi
   googleSetup: GoogleSetupApi
+  designs: DesignsApi
   slackHandOff: SlackHandOffApi
   avatarGeneration: AvatarGenerationApi
   skills: SkillsApi

@@ -26,7 +26,8 @@ const GUEST_PRELOADS = [
     fileName: 'browser-system-dialogs-preload.js'
   },
   { entry: 'src/preload/doc-preview-link.ts', fileName: 'doc-preview-link-preload.js' },
-  { entry: 'src/preload/plugin-frame-guest.ts', fileName: 'plugin-frame-guest-preload.js' }
+  { entry: 'src/preload/plugin-frame-guest.ts', fileName: 'plugin-frame-guest-preload.js' },
+  { entry: 'src/preload/openpencil-guest.ts', fileName: 'openpencil-guest-preload.js' }
 ]
 
 const WORKER_SHIM = {
