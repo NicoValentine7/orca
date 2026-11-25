@@ -25995,7 +25995,9 @@
       "back": "デザインの一覧に戻る",
       "homeTitle": "OpenPencil のホーム",
       "guestTitle": "OpenPencil",
-      "folder": "designs/"
+      "folder": "designs/",
+      "expand": "ウィンドウいっぱいに広げる",
+      "collapse": "サイドバーの幅に戻す"
     }
   }
 }

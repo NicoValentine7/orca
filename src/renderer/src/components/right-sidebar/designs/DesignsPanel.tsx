@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, FileImage, House, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, FileImage, House, Maximize2, Minimize2, Plus, RefreshCw } from 'lucide-react'
 import { useAppStore } from '@/store/index'
 import { useActiveWorktree } from '@/store/workspaces/selection/use-selected-worktree'
 import { useRepoById } from '@/store/repos/use-repository-catalog'
@@ -23,11 +23,14 @@ import {
 } from '../../plugins/frames/plugin-panel-design-token-css'
 import { usePluginPanelThemeRevision } from '../../plugins/frames/use-plugin-panel-theme-revision'
 import { clearDesignOpenRequest, useDesignOpenRequest } from './design-open-request'
+import { setDesignsExpanded, useDesignsExpanded } from './designs-expanded'
 
 /** What the OpenPencil guest shows: a designs/ file, or OpenPencil's own home and storage. */
 type OpenTarget = { root: string } & ({ kind: 'file'; name: string } | { kind: 'home' })
 
 const FLUSH_TIMEOUT_MS = 3_000
+// Long enough for the sidebar's new width to reach the page before it fits the design to it.
+const FIT_AFTER_RESIZE_MS = 200
 
 function currentGuestTheme(): DesignsGuestTheme {
   return {
@@ -253,6 +256,7 @@ export default function DesignsPanel(): React.JSX.Element {
   const request = useDesignOpenRequest()
   const [target, setTarget] = useState<OpenTarget | null>(null)
   const guestRef = useRef<Electron.WebviewTag | null>(null)
+  const expanded = useDesignsExpanded()
   const worktreeId = worktree?.id ?? null
   const worktreePath = worktree?.path ?? null
 
@@ -261,6 +265,24 @@ export default function DesignsPanel(): React.JSX.Element {
     await flushGuest(guestRef.current)
     setTarget(next)
   }, [])
+
+  // The list reads at the sidebar's width; only an open design fills the window.
+  useEffect(() => {
+    if (!target) {
+      setDesignsExpanded(false)
+    }
+  }, [target])
+
+  const toggleExpanded = (): void => {
+    setDesignsExpanded(!expanded)
+    setTimeout(() => {
+      try {
+        guestRef.current?.send(DESIGNS_GUEST_MESSAGES.fit)
+      } catch {
+        // Not loaded yet: it fits the design when it opens.
+      }
+    }, FIT_AFTER_RESIZE_MS)
+  }
 
   useEffect(() => {
     if (target && target.root !== worktreePath) {
@@ -292,6 +314,24 @@ export default function DesignsPanel(): React.JSX.Element {
           <span className="flex-1 truncate text-xs font-medium">
             {target.kind === 'file' ? target.name : t('designs.panel.homeTitle', 'OpenPencil home')}
           </span>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={
+              expanded
+                ? t('designs.panel.collapse', 'Back to the sidebar width')
+                : t('designs.panel.expand', 'Expand to the full window')
+            }
+            title={
+              expanded
+                ? t('designs.panel.collapse', 'Back to the sidebar width')
+                : t('designs.panel.expand', 'Expand to the full window')
+            }
+            aria-pressed={expanded}
+            onClick={toggleExpanded}
+          >
+            {expanded ? <Minimize2 /> : <Maximize2 />}
+          </Button>
         </div>
         <DesignsGuest
           key={`${target.root}:${target.kind === 'file' ? `file:${target.name}` : 'home'}`}

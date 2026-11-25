@@ -16,6 +16,7 @@ const { contextBridge, ipcRenderer } = electron
 let theme: DesignsGuestTheme | null = null
 const themeListeners = new Set<(theme: DesignsGuestTheme) => void>()
 let flushHandler: (() => Promise<void>) | null = null
+let fitHandler: (() => void) | null = null
 
 function isGuestTheme(value: unknown): value is DesignsGuestTheme {
   return (
@@ -46,6 +47,10 @@ ipcRenderer.on(DESIGNS_GUEST_MESSAGES.flush, async () => {
   }
 })
 
+ipcRenderer.on(DESIGNS_GUEST_MESSAGES.fit, () => {
+  fitHandler?.()
+})
+
 // The page never names a path: main answers with whatever designs/ file the panel bound it to.
 contextBridge.exposeInMainWorld('forcaDesigns', {
   open: (): Promise<{ name: string; bytes: Uint8Array } | null> =>
@@ -62,5 +67,8 @@ contextBridge.exposeInMainWorld('forcaDesigns', {
   },
   onFlush: (handler: () => Promise<void>): void => {
     flushHandler = handler
+  },
+  onFit: (handler: () => void): void => {
+    fitHandler = handler
   }
 })
