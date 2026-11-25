@@ -9,45 +9,103 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   DESIGN_FILE_EXTENSION,
+  DESIGNS_GUEST_MESSAGES,
+  DESIGNS_THEME_TOKENS,
   isDesignFileName,
   OPENPENCIL_PARTITION,
   OPENPENCIL_START_URL,
-  type DesignFileEntry
+  type DesignFileEntry,
+  type DesignsGuestTheme
 } from '../../../../../shared/designs/openpencil-host'
+import {
+  buildPanelDesignTokenCss,
+  currentPanelColorScheme
+} from '../../plugins/frames/plugin-panel-design-token-css'
+import { usePluginPanelThemeRevision } from '../../plugins/frames/use-plugin-panel-theme-revision'
 import { clearDesignOpenRequest, useDesignOpenRequest } from './design-open-request'
 
 /** What the OpenPencil guest shows: a designs/ file, or OpenPencil's own home and storage. */
-type OpenTarget = { kind: 'file'; name: string } | { kind: 'home' }
+type OpenTarget = { root: string } & ({ kind: 'file'; name: string } | { kind: 'home' })
 
-function DesignsGuest({ root, target }: { root: string; target: OpenTarget }): React.JSX.Element {
+const FLUSH_TIMEOUT_MS = 3_000
+
+function currentGuestTheme(): DesignsGuestTheme {
+  return {
+    colorScheme: currentPanelColorScheme(),
+    tokens: buildPanelDesignTokenCss(DESIGNS_THEME_TOKENS)
+  }
+}
+
+/** Asks the page to write its last edit and waits for it, so removing the page loses nothing. */
+function flushGuest(element: Electron.WebviewTag | null): Promise<void> {
+  return new Promise((resolve) => {
+    if (!element) {
+      resolve()
+      return
+    }
+    const done = (): void => {
+      clearTimeout(timer)
+      element.removeEventListener('ipc-message', onMessage)
+      resolve()
+    }
+    const onMessage = (event: Electron.IpcMessageEvent): void => {
+      if (event.channel === DESIGNS_GUEST_MESSAGES.flushed) {
+        done()
+      }
+    }
+    const timer = setTimeout(done, FLUSH_TIMEOUT_MS)
+    element.addEventListener('ipc-message', onMessage)
+    try {
+      element.send(DESIGNS_GUEST_MESSAGES.flush)
+    } catch {
+      // Not loaded yet, so it holds no edit.
+      done()
+    }
+  })
+}
+
+function DesignsGuest({
+  target,
+  guestRef
+}: {
+  target: OpenTarget
+  guestRef: React.RefObject<Electron.WebviewTag | null>
+}): React.JSX.Element {
   const t = useTranslate()
-  const ref = useRef<Electron.WebviewTag | null>(null)
+  const themeRevision = usePluginPanelThemeRevision()
+  const loadedRef = useRef(false)
   useEffect(() => {
-    const element = ref.current
+    const element = guestRef.current
     if (!element) {
       return
     }
     // Main holds the page's first open until this binding lands, so the page never names a path.
-    // Why dom-ready: getWebContentsId throws before it.
-    const bind = (): void => {
-      element.removeEventListener('dom-ready', bind)
+    // Why dom-ready: getWebContentsId and send throw before it.
+    const onReady = (): void => {
+      loadedRef.current = true
+      element.send(DESIGNS_GUEST_MESSAGES.theme, currentGuestTheme())
       void window.api.designs.bindGuest({
         guestId: element.getWebContentsId(),
-        target: target.kind === 'file' ? { root, name: target.name } : null
+        target: target.kind === 'file' ? { root: target.root, name: target.name } : null
       })
     }
-    element.addEventListener('dom-ready', bind)
+    element.addEventListener('dom-ready', onReady)
     return () => {
-      element.removeEventListener('dom-ready', bind)
+      element.removeEventListener('dom-ready', onReady)
     }
-  }, [root, target])
+  }, [guestRef, target])
+  useEffect(() => {
+    if (themeRevision > 0 && loadedRef.current) {
+      guestRef.current?.send(DESIGNS_GUEST_MESSAGES.theme, currentGuestTheme())
+    }
+  }, [guestRef, themeRevision])
   return (
     <webview
-      ref={ref}
+      ref={guestRef}
       partition={OPENPENCIL_PARTITION}
-      src={OPENPENCIL_START_URL}
+      src={`${OPENPENCIL_START_URL}?forca=${target.kind}`}
       title={t('designs.panel.guestTitle', 'OpenPencil')}
-      className="flex min-h-0 w-full flex-1 border-0 bg-background"
+      className="flex min-h-0 w-full flex-1 border-0 bg-sidebar"
     />
   )
 }
@@ -98,7 +156,7 @@ function DesignsList({
       return
     }
     setDraft(null)
-    onOpen({ kind: 'file', name: result.name })
+    onOpen({ root, kind: 'file', name: result.name })
   }
 
   return (
@@ -163,7 +221,7 @@ function DesignsList({
             key={file.name}
             type="button"
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-            onClick={() => onOpen({ kind: 'file', name: file.name })}
+            onClick={() => onOpen({ root, kind: 'file', name: file.name })}
           >
             <FileImage className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{file.name}</span>
@@ -175,7 +233,7 @@ function DesignsList({
           variant="ghost"
           size="xs"
           className="w-full justify-start"
-          onClick={() => onOpen({ kind: 'home' })}
+          onClick={() => onOpen({ root, kind: 'home' })}
         >
           <House />
           {t('designs.panel.home', 'OpenPencil home (its own storage)')}
@@ -194,19 +252,55 @@ export default function DesignsPanel(): React.JSX.Element {
   )
   const request = useDesignOpenRequest()
   const [target, setTarget] = useState<OpenTarget | null>(null)
+  const guestRef = useRef<Electron.WebviewTag | null>(null)
   const worktreeId = worktree?.id ?? null
+  const worktreePath = worktree?.path ?? null
+
+  // Every way off the open page writes its last edit first.
+  const navigate = useCallback(async (next: OpenTarget | null) => {
+    await flushGuest(guestRef.current)
+    setTarget(next)
+  }, [])
 
   useEffect(() => {
-    setTarget(null)
-  }, [worktreeId])
-
-  useEffect(() => {
-    if (request && request.worktreeId === worktreeId) {
-      setTarget({ kind: 'file', name: request.name })
-      clearDesignOpenRequest(request)
+    if (target && target.root !== worktreePath) {
+      void navigate(null)
     }
-  }, [request, worktreeId])
+  }, [navigate, target, worktreePath])
 
+  useEffect(() => {
+    if (request && request.worktreeId === worktreeId && worktreePath) {
+      clearDesignOpenRequest(request)
+      void navigate({ root: worktreePath, kind: 'file', name: request.name })
+    }
+  }, [navigate, request, worktreeId, worktreePath])
+
+  // Kept on screen while it writes, even after the workspace changed under it.
+  if (target) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t('designs.panel.back', 'Back to designs')}
+            title={t('designs.panel.back', 'Back to designs')}
+            onClick={() => void navigate(null)}
+          >
+            <ArrowLeft />
+          </Button>
+          <span className="flex-1 truncate text-xs font-medium">
+            {target.kind === 'file' ? target.name : t('designs.panel.homeTitle', 'OpenPencil home')}
+          </span>
+        </div>
+        <DesignsGuest
+          key={`${target.root}:${target.kind === 'file' ? `file:${target.name}` : 'home'}`}
+          target={target}
+          guestRef={guestRef}
+        />
+      </div>
+    )
+  }
   if (!worktree) {
     return (
       <p className="px-4 py-6 text-center text-sm text-muted-foreground">
@@ -224,30 +318,5 @@ export default function DesignsPanel(): React.JSX.Element {
       </p>
     )
   }
-  if (!target) {
-    return <DesignsList root={worktree.path} onOpen={setTarget} />
-  }
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t('designs.panel.back', 'Back to designs')}
-          title={t('designs.panel.back', 'Back to designs')}
-          onClick={() => setTarget(null)}
-        >
-          <ArrowLeft />
-        </Button>
-        <span className="flex-1 truncate text-xs font-medium">
-          {target.kind === 'file' ? target.name : t('designs.panel.homeTitle', 'OpenPencil home')}
-        </span>
-      </div>
-      <DesignsGuest
-        key={target.kind === 'file' ? `file:${target.name}` : 'home'}
-        root={worktree.path}
-        target={target}
-      />
-    </div>
-  )
+  return <DesignsList root={worktree.path} onOpen={(next) => void navigate(next)} />
 }

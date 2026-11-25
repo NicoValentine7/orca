@@ -48,7 +48,14 @@ if (succeeds('git', ['apply', '--check', patch])) {
 }
 run('bun', ['install'])
 run('bun', ['run', 'build:packages'])
+// The Designs panel has no OpenPencil Cloud: no sign-in, cloud files or cloud sharing.
+env.VITE_OPENPENCIL_CLOUD = 'off'
 run('bunx', ['vite', 'build'])
 rmSync(out, { recursive: true, force: true })
 cpSync(join(src, 'dist'), out, { recursive: true })
+// The panel's interface font, so OpenPencil's panels read in forca's own type.
+cpSync(
+  join(repoRoot, 'src/renderer/src/assets/fonts/Geist-Variable.woff2'),
+  join(out, 'forca/Geist-Variable.woff2')
+)
 console.log(`OpenPencil ${OPENPENCIL_TAG} built into ${out}`)

@@ -11,10 +11,12 @@ import { PANEL_DESIGN_TOKEN_ALLOWLIST } from '../../../../../shared/plugins/fram
 import type { PluginFrameWindow } from './plugin-frame-host-lanes'
 
 /** Snapshot trusted computed tokens for isolated panels; strip structural CSS characters before inserting into the shell style block. */
-export function buildPanelDesignTokenCss(): string {
+export function buildPanelDesignTokenCss(
+  tokens: readonly string[] = PANEL_DESIGN_TOKEN_ALLOWLIST
+): string {
   const styles = getComputedStyle(document.documentElement)
   const declarations: string[] = []
-  for (const token of PANEL_DESIGN_TOKEN_ALLOWLIST) {
+  for (const token of tokens) {
     const value = styles.getPropertyValue(token).trim()
     if (value.length > 0) {
       // Why prefixed: bare names collide with a panel's own shadcn/Tailwind variables.

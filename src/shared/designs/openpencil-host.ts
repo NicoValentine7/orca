@@ -15,6 +15,34 @@ export const DESIGNS_CHANNELS = {
   guestWrite: 'designs:guestWrite'
 } as const
 
+/** Host-to-page messages over the webview's own channel (`webview.send` / `sendToHost`). */
+export const DESIGNS_GUEST_MESSAGES = {
+  theme: 'designs:guest-theme',
+  flush: 'designs:guest-flush',
+  flushed: 'designs:guest-flushed'
+} as const
+
+/** forca tokens OpenPencil's interface is restyled from, sent as `--orca-<name>`. */
+export const DESIGNS_THEME_TOKENS = [
+  '--background',
+  '--foreground',
+  '--sidebar',
+  '--editor-surface',
+  '--primary',
+  '--primary-foreground',
+  '--muted',
+  '--muted-foreground',
+  '--accent',
+  '--destructive',
+  '--border',
+  '--ring',
+  '--radius',
+  '--font-sans',
+  '--font-mono'
+] as const
+
+export type DesignsGuestTheme = { colorScheme: 'light' | 'dark'; tokens: string }
+
 export type DesignFileEntry = { name: string; size: number; modifiedAt: number }
 
 export type DesignsFailureReason = 'no-worktree' | 'unsafe-name' | 'outside-designs' | 'exists'
