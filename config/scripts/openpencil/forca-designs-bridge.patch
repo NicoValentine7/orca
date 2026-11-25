@@ -1,21 +1,22 @@
+diff --git a/.github/FUNDING.yml b/.github/FUNDING.yml
+deleted file mode 100644
+index 3425aac..0000000
+--- a/.github/FUNDING.yml
++++ /dev/null
+@@ -1 +0,0 @@
+-ko_fi: dannote
 diff --git a/src/app/forca/designs-bridge.ts b/src/app/forca/designs-bridge.ts
 new file mode 100644
-index 0000000..d48b76a
+index 0000000..bb67be2
 --- /dev/null
 +++ b/src/app/forca/designs-bridge.ts
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,90 @@
 +import { watch } from 'vue'
 +
 +import type { EditorStore } from '@/app/editor/session'
++import type { ForcaHost } from '@/app/forca/host'
 +import { openFileInNewTab } from '@/app/tabs/open/file'
 +import { createDocumentTab } from '@/app/tabs/state'
-+
-+/** What forca's Designs panel exposes to this page through its preload. */
-+interface ForcaDesigns {
-+  /** The designs/ file the panel opened, or null when the panel shows OpenPencil's own home. */
-+  open(): Promise<{ name: string; bytes: Uint8Array } | null>
-+  write(bytes: Uint8Array): Promise<void>
-+}
 +
 +const AUTOSYNC_DELAY_MS = 600
 +
@@ -29,16 +30,11 @@ index 0000000..d48b76a
 +  return out
 +}
 +
-+export function forcaDesigns(): ForcaDesigns | null {
-+  const host = (globalThis as { forcaDesigns?: Partial<ForcaDesigns> }).forcaDesigns
-+  return host?.open && host.write ? (host as ForcaDesigns) : null
-+}
-+
 +/**
 + * Opens the designs/ file forca handed over and writes each save back to it through a file
 + * handle, so OpenPencil's own save path is the only writer.
 + */
-+export async function startForcaDesignsBridge(host: ForcaDesigns): Promise<void> {
++export async function startForcaDesignsBridge(host: ForcaHost): Promise<void> {
 +  const opened = await host.open()
 +  if (!opened) return
 +  const { name } = opened
@@ -76,13 +72,25 @@ index 0000000..d48b76a
 +  }
 +
 +  let timer: ReturnType<typeof setTimeout> | undefined
-+  const schedule = () => {
++  let writing: Promise<void> = Promise.resolve()
++  const writeNow = (): Promise<void> => {
 +    clearTimeout(timer)
-+    timer = setTimeout(async () => {
++    timer = undefined
++    // One write at a time; a flush waits for the one in flight, then writes what is left.
++    writing = writing.then(async () => {
++      if (!store.hasUnsavedChanges()) return
 +      await store
 +        .saveFigFile()
 +        .catch((error: unknown) => console.error('[forca] design write failed', error))
-+      if (store.hasUnsavedChanges()) schedule()
++    })
++    return writing
++  }
++  const schedule = () => {
++    clearTimeout(timer)
++    timer = setTimeout(() => {
++      void writeNow().then(() => {
++        if (store.hasUnsavedChanges()) schedule()
++      })
 +    }, AUTOSYNC_DELAY_MS)
 +  }
 +  watch(
@@ -91,6 +99,131 @@ index 0000000..d48b76a
 +      if (dirty) schedule()
 +    }
 +  )
++  host.onFlush(writeNow)
++}
+diff --git a/src/app/forca/host.css b/src/app/forca/host.css
+new file mode 100644
+index 0000000..83de41c
+--- /dev/null
++++ b/src/app/forca/host.css
+@@ -0,0 +1,51 @@
++/*
++ * Inside forca's Designs panel the interface takes forca's tokens (`--orca-*`, sent by the panel)
++ * so it reads as part of forca. `!important` beats the accent palette OpenPencil writes inline.
++ */
++html[data-forca] {
++  --color-panel: var(--orca-sidebar) !important;
++  --color-panel-secondary: var(--orca-sidebar) !important;
++  --color-panel-field: var(--orca-muted) !important;
++  --color-panel-field-hover: var(--orca-accent) !important;
++  --color-panel-focus: var(--orca-ring) !important;
++  --color-panel-selected: var(--orca-accent) !important;
++  --color-panel-selected-muted: color-mix(
++    in srgb,
++    var(--orca-foreground) 10%,
++    var(--orca-sidebar)
++  ) !important;
++  --color-canvas: var(--orca-editor-surface) !important;
++  --color-border: var(--orca-border) !important;
++  --color-hover: var(--orca-accent) !important;
++  --color-accent: var(--orca-primary) !important;
++  --color-on-accent: var(--orca-primary-foreground) !important;
++  --color-surface: var(--orca-foreground) !important;
++  --color-muted: var(--orca-muted-foreground) !important;
++  --color-input: var(--orca-background) !important;
++  --color-error: var(--orca-destructive) !important;
++  --color-error-fill: var(--orca-destructive) !important;
++  --color-ruler-bg: var(--orca-sidebar) !important;
++  --color-ruler-tick: var(--orca-ring) !important;
++  --color-ruler-text: var(--orca-muted-foreground) !important;
++  --font-sans: var(--orca-font-sans) !important;
++  --font-mono: var(--orca-font-mono) !important;
++  --default-font-family: var(--orca-font-sans) !important;
++  --radius-sm: calc(var(--orca-radius) * 0.6) !important;
++  --radius-md: calc(var(--orca-radius) * 0.8) !important;
++  --radius-lg: var(--orca-radius) !important;
++  --radius-xl: calc(var(--orca-radius) * 1.4) !important;
++}
++
++html[data-forca] body {
++  font-family: var(--orca-font-sans);
++}
++
++/* forca shows the file's name and the way back, and has no rooms or sharing here. */
++html[data-forca='file'] [data-slot='tab-bar'],
++html[data-forca] [data-test-id='collab-share-button'],
++html[data-forca] [data-test-id='collab-avatars'],
++html[data-forca] [data-test-id='mobile-share'],
++html[data-forca] [data-test-id='mobile-presence'],
++html[data-forca] [data-test-id='home-join-room'] {
++  display: none !important;
++}
+diff --git a/src/app/forca/host.ts b/src/app/forca/host.ts
+new file mode 100644
+index 0000000..5dbc6d6
+--- /dev/null
++++ b/src/app/forca/host.ts
+@@ -0,0 +1,61 @@
++import { updateAISetupState } from '@/app/settings/preferences/store'
++import { setAppTheme } from '@/app/shell/theme'
++
++import './host.css'
++
++/** forca's theme as its Designs panel sends it: the color scheme and its own `--orca-*` tokens. */
++export interface ForcaTheme {
++  colorScheme: 'light' | 'dark'
++  tokens: string
++}
++
++/** What forca's Designs panel exposes to this page through its preload. */
++export interface ForcaHost {
++  /** The designs/ file the panel opened, or null when the panel shows OpenPencil's own home. */
++  open(): Promise<{ name: string; bytes: Uint8Array } | null>
++  write(bytes: Uint8Array): Promise<void>
++  theme(): ForcaTheme | null
++  onTheme(listener: (theme: ForcaTheme) => void): void
++  /** forca calls this before it removes the page, so the last edit is written first. */
++  onFlush(handler: () => Promise<void>): void
++}
++
++const FORCA_INTERFACE_FONT = { family: 'Geist', url: '/forca/Geist-Variable.woff2' }
++
++export function forcaHost(): ForcaHost | null {
++  const host = (globalThis as { forcaDesigns?: Partial<ForcaHost> }).forcaDesigns
++  return host?.open && host.write && host.theme && host.onTheme && host.onFlush
++    ? (host as ForcaHost)
++    : null
++}
++
++function applyForcaTheme(theme: ForcaTheme): void {
++  let style = document.getElementById('forca-tokens')
++  if (!style) {
++    style = document.createElement('style')
++    style.id = 'forca-tokens'
++    document.head.append(style)
++  }
++  // forca strips {}<>; from each value, so the tokens cannot close this rule.
++  style.textContent = `:root{${theme.tokens}}`
++  setAppTheme(theme.colorScheme)
++}
++
++/**
++ * Runs before the app mounts inside forca's Designs panel: forca's tokens restyle the interface,
++ * its theme replaces OpenPencil's, and the first-run welcome stays closed.
++ */
++export function prepareForcaHost(host: ForcaHost): void {
++  // The panel names the mode in the address, since the file itself arrives only after mount.
++  const mode = new URL(location.href).searchParams.get('forca') === 'file' ? 'file' : 'home'
++  document.documentElement.dataset.forca = mode
++  updateAISetupState('done')
++  document.fonts.add(
++    new FontFace(FORCA_INTERFACE_FONT.family, `url(${FORCA_INTERFACE_FONT.url})`, {
++      weight: '100 900'
++    })
++  )
++  const theme = host.theme()
++  if (theme) applyForcaTheme(theme)
++  host.onTheme(applyForcaTheme)
 +}
 diff --git a/src/app/shell/updater/web.ts b/src/app/shell/updater/web.ts
 index a2065a6..54c1f11 100644
@@ -106,16 +239,47 @@ index a2065a6..54c1f11 100644
    // A first visit's worker taking control of the page is no new version.
    const controlledAtStart = navigator.serviceWorker.controller !== null
 diff --git a/src/boot.ts b/src/boot.ts
-index 951c3ab..6f596c6 100644
+index 951c3ab..ec52b55 100644
 --- a/src/boot.ts
 +++ b/src/boot.ts
-@@ -50,6 +50,9 @@ export async function boot(): Promise<void> {
+@@ -11,6 +11,7 @@ import { recordRuntimeError } from '@/app/diagnostics'
+ import { installNativeFigArchives } from '@/app/document/io/native-fig'
+ import { preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
+ import { preloadFonts } from '@/app/editor/fonts'
++import { forcaHost, prepareForcaHost } from '@/app/forca/host'
+ import { registerInterfaceFont } from '@/app/editor/fonts/interface'
+ import { reportErrorAction } from '@/app/reports/state'
+ import { announceViteReloads } from '@/app/shell/reload/vite'
+@@ -30,6 +31,8 @@ import router from './router'
+  */
+ export async function boot(): Promise<void> {
+   registerInterfaceFont()
++  const forca = forcaHost()
++  if (forca) prepareForcaHost(forca)
+   if (IS_TAURI) {
+     installNativeFigArchives()
+     // Before anything else starts a process, so a pid it stops can only be a leftover.
+@@ -50,6 +53,10 @@ export async function boot(): Promise<void> {
  
    await router.isReady()
    await nextTick()
-+  const { forcaDesigns, startForcaDesignsBridge } = await import('@/app/forca/designs-bridge')
-+  const designs = forcaDesigns()
-+  if (designs) void startForcaDesignsBridge(designs).catch((error: unknown) => console.error('[forca]', error))
++  if (forca) {
++    const { startForcaDesignsBridge } = await import('@/app/forca/designs-bridge')
++    void startForcaDesignsBridge(forca).catch((error: unknown) => console.error('[forca]', error))
++  }
    const failure = bootErrors.stop()
    if (failure) {
      await reportBootFailure(failure.error)
+diff --git a/src/components/MobileHud/MobileShareButton.vue b/src/components/MobileHud/MobileShareButton.vue
+index 08a2cb2..afe9bf9 100644
+--- a/src/components/MobileHud/MobileShareButton.vue
++++ b/src/components/MobileHud/MobileShareButton.vue
+@@ -6,7 +6,7 @@ const hud = useMobileHudContext()
+ </script>
+ 
+ <template>
+-  <HudButton :label="hud.messages.share" @click="hud.share">
++  <HudButton :label="hud.messages.share" data-test-id="mobile-share" @click="hud.share">
+     <template #leading><icon-lucide-share-2 class="size-3.5" /></template>
+   </HudButton>
+ </template>
