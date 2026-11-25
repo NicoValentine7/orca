@@ -30935,5 +30935,27 @@
     "moveLeft": "Move left",
     "moveRight": "Move right",
     "reset": "Reset tab order"
+  },
+  "designs": {
+    "panel": {
+      "tab": "Designs",
+      "listFailed": "The designs folder could not be read.",
+      "badName": "Use a plain file name without slashes.",
+      "exists": "A design with this name already exists.",
+      "createFailed": "The design could not be created.",
+      "new": "New design",
+      "refresh": "Refresh",
+      "namePlaceholder": "name.fig",
+      "nameLabel": "Design file name",
+      "create": "Create",
+      "empty": "No .fig files in designs/ yet.",
+      "home": "OpenPencil home (its own storage)",
+      "noWorkspace": "Open a workspace to see its designs.",
+      "remote": "Designs works with workspaces on this computer. Remote and SSH workspaces are not supported yet.",
+      "back": "Back to designs",
+      "homeTitle": "OpenPencil home",
+      "guestTitle": "OpenPencil",
+      "folder": "designs/"
+    }
   }
 }

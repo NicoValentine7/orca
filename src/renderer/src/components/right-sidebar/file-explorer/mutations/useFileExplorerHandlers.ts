@@ -11,6 +11,7 @@ import {
   requireMatchingFileExplorerOperationRoute
 } from '../navigation/file-explorer-operation-owner'
 import { runtimeTargetEnvironmentId } from '@/runtime/rpc/targets/runtime-client-target'
+import { designFileNameForRelativePath, requestDesignOpen } from '../../designs/design-open-request'
 import { fileExplorerNodeTabRelativePath } from '../tree/file-explorer-directory-listing'
 
 type UseFileExplorerHandlersParams = {
@@ -86,6 +87,11 @@ export async function activateFileExplorerNode(args: {
       return
     }
     toggleDir(activeWorktreeId, node.path)
+    return
+  }
+  const designName = designFileNameForRelativePath(node.relativePath)
+  if (designName && !node.isSymlink) {
+    requestDesignOpen(activeWorktreeId, designName)
     return
   }
   let escapesWorktree = false

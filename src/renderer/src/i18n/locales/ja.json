@@ -25956,5 +25956,27 @@
   },
   "agentCliUpdate": {
     "thisComputer": "このコンピューター"
+  },
+  "designs": {
+    "panel": {
+      "tab": "デザイン",
+      "listFailed": "designs フォルダを読めませんでした。",
+      "badName": "スラッシュを含まないファイル名にしてください。",
+      "exists": "同じ名前のデザインがすでにあります。",
+      "createFailed": "デザインを作れませんでした。",
+      "new": "新しいデザイン",
+      "refresh": "更新",
+      "namePlaceholder": "name.fig",
+      "nameLabel": "デザインのファイル名",
+      "create": "作成",
+      "empty": "designs フォルダに .fig はまだありません。",
+      "home": "OpenPencil のホーム（OpenPencil 自身の保存場所）",
+      "noWorkspace": "ワークスペースを開くと、そのデザインが表示されます。",
+      "remote": "デザインはこのコンピューター上のワークスペースで使えます。リモートと SSH のワークスペースにはまだ対応していません。",
+      "back": "デザインの一覧に戻る",
+      "homeTitle": "OpenPencil のホーム",
+      "guestTitle": "OpenPencil",
+      "folder": "designs/"
+    }
   }
 }

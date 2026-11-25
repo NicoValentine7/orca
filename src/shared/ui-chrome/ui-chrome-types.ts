@@ -101,6 +101,7 @@ export const STATIC_RIGHT_SIDEBAR_TABS = [
   'source-control',
   'checks',
   'ports',
+  'designs',
   'bot-activity',
   'bot-automations',
   'bot-connectors',
